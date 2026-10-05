@@ -2,12 +2,14 @@
 
 /* =========================================================
    CORVALI'S ECHOES
-   Blackjack Steampunk Roguelike
-   ========================================================= */
+   Steampunk Blackjack Roguelike
+   Versione riorganizzata
+========================================================= */
 
-/* =========================
-   GAME STATE
-   ========================= */
+
+/* =========================================================
+   STATO DEL GIOCO
+========================================================= */
 
 let cycle = 1;
 let cogs = 0;
@@ -16,10 +18,10 @@ let hull = 100;
 let maxHull = 100;
 
 let pressure = 0;
-const maxPressure = 100;
+let maxPressure = 100;
 
-let baseTorque = 0;
-let clockPower = 0;
+let baseTorque = 10;
+let clockPower = 10;
 
 let hand = [];
 let handValue = 0;
@@ -27,468 +29,748 @@ let aceCount = 0;
 
 let blackjack = false;
 let bust = false;
+let combatStarted = false;
+let playerStood = false;
+let doubleUsed = false;
 
 let enemy = null;
-let combatStarted = false;
 
 let equippedEchoes = [];
 
+let shopEchoes = [];
 
-/* =========================
-   ECHO DATABASE
-   ========================= */
+let gameActive = false;
+
+
+/* =========================================================
+   COLORI FUNZIONALI
+========================================================= */
+
+const COLORS = {
+    SYSTEM: "system-text",
+    PLAYER: "player-text",
+    ENEMY: "enemy-text"
+};
+
+
+/* =========================================================
+   ECHOES
+========================================================= */
 
 const ECHOES = [
 
     {
         name: "CLOCKMAKER",
-        rarity: "WORN",
-        description: "+2 Clock Power every hand.",
-        effect: function () {
-            clockPower += 2;
+        description: "aumenta il Clock Power di 2",
+        effect: {
+            clockPower: 2
         }
     },
 
     {
         name: "BRASS HEART",
-        rarity: "WORN",
-        description: "+10 maximum Hull.",
-        passive: true
+        description: "aumenta lo scafo massimo di 15",
+        effect: {
+            maxHull: 15
+        }
     },
 
     {
         name: "PRESSURE VALVE",
-        rarity: "WORN",
-        description: "Vent removes 40 Pressure instead of 30.",
-        passive: true
+        description: "riduce di 2 la pressione generata dalle carte",
+        effect: {
+            pressureReduction: 2
+        }
     },
 
     {
         name: "STEAM CORE",
-        rarity: "WORN",
-        description: "+3 Base Torque every hand.",
-        effect: function () {
-            baseTorque += 3;
+        description: "aumenta il Base Torque di 3",
+        effect: {
+            baseTorque: 3
         }
     },
 
     {
         name: "BROKEN GEAR",
-        rarity: "WORN",
-        description: "After a Bust, gain +8 Clock Power.",
-        bustEffect: function () {
-            clockPower += 8;
+        description: "aumenta il danno del 10%, ma aumenta la pressione",
+        effect: {
+            damageMultiplier: 1.10,
+            pressureGeneration: 2
         }
     },
 
     {
         name: "AUTOMATON",
-        rarity: "WORN",
-        description: "Start every hand with +5 Base Torque.",
-        effect: function () {
-            baseTorque += 5;
+        description: "aumenta il Base Torque di 5",
+        effect: {
+            baseTorque: 5
         }
     },
 
     {
         name: "BRASS LUNG",
-        rarity: "WORN",
-        description: "Vent also restores 5 Hull.",
-        passive: true
+        description: "riduce di 10 la pressione iniziale di ogni scontro",
+        effect: {
+            startingPressure: -10
+        }
     },
 
     {
         name: "OLD SPRING",
-        rarity: "WORN",
-        description: "Every 21 gives +5 Clock Power.",
-        value21: 5
+        description: "aumenta il Clock Power di 4",
+        effect: {
+            clockPower: 4
+        }
     },
 
     {
         name: "PERFECT GEAR",
-        rarity: "FORGED",
-        description: "If hand value is exactly 21, +10 Clock Power.",
-        value21: 10
+        description: "aumenta il danno minimo inflitto di 1",
+        effect: {
+            minimumDamage: 1
+        }
     },
 
     {
         name: "HIGH PRESSURE PISTON",
-        rarity: "FORGED",
-        description: "Gain +1 Base Torque for every 10 Pressure.",
-        effect: function () {
-            baseTorque += Math.floor(pressure / 10);
+        description: "aumenta il Base Torque di 8",
+        effect: {
+            baseTorque: 8
         }
     },
 
     {
         name: "COOLING COIL",
-        rarity: "FORGED",
-        description: "Reduce Pressure by 5 after every hand.",
-        passive: true
+        description: "riduce di 5 la pressione generata",
+        effect: {
+            pressureReduction: 5
+        }
     },
 
     {
         name: "STEAM VALVE",
-        rarity: "FORGED",
-        description: "Vent removes an additional 10 Pressure.",
-        passive: true
+        description: "Vent recupera 5 punti scafo in più",
+        effect: {
+            ventHull: 5
+        }
     },
 
     {
         name: "CHRONO CORE",
-        rarity: "FORGED",
-        description: "+5 Clock Power every third Cycle.",
-        effect: function () {
-            if (cycle % 3 === 0) {
-                clockPower += 5;
-            }
+        description: "aumenta il Clock Power di 8",
+        effect: {
+            clockPower: 8
         }
     },
 
     {
         name: "RUSTED HEART",
-        rarity: "FORGED",
-        description: "Start every Cycle with +15 Hull.",
-        cycleStart: function () {
-            hull = Math.min(maxHull, hull + 15);
+        description: "aumenta lo scafo massimo di 25",
+        effect: {
+            maxHull: 25
         }
     },
 
     {
         name: "BRASS EYE",
-        rarity: "FORGED",
-        description: "Gain +5 Base Torque when standing on 18+.",
-        value18: 5
+        description: "riduce l'armatura nemica di 1",
+        effect: {
+            enemyArmorReduction: 1
+        }
     },
 
     {
         name: "OVERDRIVE",
-        rarity: "FORGED",
-        description: "Double gives +5 Clock Power.",
-        doubleEffect: function () {
-            clockPower += 5;
+        description: "aumenta il danno del 20%, ma genera più pressione",
+        effect: {
+            damageMultiplier: 1.20,
+            pressureGeneration: 5
         }
     },
 
     {
         name: "COUNTERWEIGHT",
-        rarity: "FORGED",
-        description: "Enemy attacks deal 2 less damage.",
-        passive: true
+        description: "riduce di 10 la pressione massima richiesta per l'Overheat",
+        effect: {
+            pressureReduction: 3
+        }
     },
 
     {
         name: "TIME SPRING",
-        rarity: "FORGED",
-        description: "Every 20 gives +8 Clock Power.",
-        value20: 8
+        description: "aumenta il Clock Power di 6",
+        effect: {
+            clockPower: 6
+        }
     },
 
     {
         name: "BLACK GEAR",
-        rarity: "FORGED",
-        description: "After Bust, deal 10 damage to the enemy.",
-        bustEffect: function () {
-            if (enemy) {
-                enemy.hull -= 10;
-                if (enemy.hull < 0) {
-                    enemy.hull = 0;
-                }
-            }
+        description: "aumenta il Base Torque di 10",
+        effect: {
+            baseTorque: 10
         }
     },
 
     {
         name: "PRESSURE CHAMBER",
-        rarity: "ENGINEERED",
-        description: "Maximum Pressure becomes 120.",
-        passive: true
+        description: "aumenta la pressione massima a 120",
+        effect: {
+            maxPressure: 20
+        }
     },
 
     {
         name: "MECHANICAL HEART",
-        rarity: "ENGINEERED",
-        description: "Start each Cycle with +25 Hull.",
-        cycleStart: function () {
-            hull = Math.min(maxHull, hull + 25);
+        description: "recupera 3 scafo dopo ogni vittoria",
+        effect: {
+            victoryHull: 3
         }
     },
 
     {
         name: "LOST ESCAPEMENT",
-        rarity: "ENGINEERED",
-        description: "Blackjack gives +10 Clock Power.",
-        blackjackEffect: function () {
-            clockPower += 10;
+        description: "aumenta il Clock Power di 10",
+        effect: {
+            clockPower: 10
         }
     },
 
     {
         name: "GOLDEN PISTON",
-        rarity: "ENGINEERED",
-        description: "Stand on 20 or 21 gives +10 Base Torque.",
-        value20: 10
+        description: "aumenta il Base Torque di 12",
+        effect: {
+            baseTorque: 12
+        }
     },
 
     {
         name: "CORVALI LENS",
-        rarity: "ENGINEERED",
-        description: "Damage ignores 5 enemy Armor.",
-        passive: true
+        description: "riduce l'armatura nemica di 2",
+        effect: {
+            enemyArmorReduction: 2
+        }
     },
 
     {
         name: "AEON GEAR",
-        rarity: "ENGINEERED",
-        description: "Every 10th Cycle gives +20 Clock Power.",
-        effect: function () {
-            if (cycle % 10 === 0) {
-                clockPower += 20;
-            }
+        description: "aumenta il danno del 25%",
+        effect: {
+            damageMultiplier: 1.25
         }
     },
 
     {
         name: "INFINITE SPRING",
-        rarity: "ENGINEERED",
-        description: "Natural Blackjack gives +15 Base Torque.",
-        blackjackEffect: function () {
-            baseTorque += 15;
+        description: "aumenta il Clock Power di 12",
+        effect: {
+            clockPower: 12
         }
     },
 
     {
         name: "VOID VALVE",
-        rarity: "RELIC",
-        description: "Vent removes 45 Pressure.",
-        passive: true
+        description: "riduce di 8 la pressione generata",
+        effect: {
+            pressureReduction: 8
+        }
     },
 
     {
         name: "MASTER CLOCK",
-        rarity: "RELIC",
-        description: "+5 Clock Power every hand.",
-        effect: function () {
-            clockPower += 5;
+        description: "aumenta Base Torque e Clock Power di 5",
+        effect: {
+            baseTorque: 5,
+            clockPower: 5
         }
     },
 
     {
         name: "THE FIRST GEAR",
-        rarity: "RELIC",
-        description: "Natural Blackjack starts with 35 Base Torque.",
-        blackjackEffect: function () {
-            baseTorque = Math.max(baseTorque, 35);
+        description: "aumenta Base Torque di 15",
+        effect: {
+            baseTorque: 15
         }
     },
 
     {
         name: "CORVALI ECHO",
-        rarity: "RELIC",
-        description: "All Clock Power bonuses are increased by 25%.",
-        passive: true
+        description: "aumenta tutte le principali capacità della macchina",
+        effect: {
+            baseTorque: 8,
+            clockPower: 8,
+            maxHull: 15,
+            damageMultiplier: 1.10
+        }
     }
+
 ];
 
 
-/* =========================
-   ENEMY DATABASE
-   ========================= */
+/* =========================================================
+   NEMICI
+========================================================= */
 
 const ENEMIES = [
 
     {
         name: "BRASS SENTINEL",
-        hull: 50,
-        attack: 10,
-        armor: 4,
-        ability: "ARMOR"
+        description: "nemico corazzato",
+        hull: 30,
+        armor: 2,
+        damage: 8
     },
 
     {
         name: "GEAR HOUND",
-        hull: 60,
-        attack: 12,
+        description: "predatore meccanico veloce",
+        hull: 24,
         armor: 1,
-        ability: "PRESSURE"
+        damage: 10
     },
 
     {
         name: "BOILER WASP",
-        hull: 65,
-        attack: 13,
-        armor: 2,
-        ability: "HEAT"
+        description: "macchina volante alimentata a vapore",
+        hull: 20,
+        armor: 0,
+        damage: 12
     },
 
     {
         name: "CLOCKWORK GUARD",
-        hull: 80,
-        attack: 12,
-        armor: 8,
-        ability: "FORTRESS"
+        description: "guardiano costruito per resistere",
+        hull: 42,
+        armor: 4,
+        damage: 9
     },
 
     {
         name: "IRON REVENANT",
-        hull: 90,
-        attack: 15,
-        armor: 4,
-        ability: "BUST"
+        description: "relitto meccanico ancora operativo",
+        hull: 50,
+        armor: 5,
+        damage: 12
     },
 
     {
         name: "FURNACE KING",
-        hull: 100,
-        attack: 17,
-        armor: 5,
-        ability: "OVERHEAT"
+        description: "gigantesca macchina alimentata da una fornace",
+        hull: 65,
+        armor: 6,
+        damage: 15
     },
 
     {
         name: "CHRONOPHAGE",
-        hull: 110,
-        attack: 18,
-        armor: 6,
-        ability: "TIME"
+        description: "entità che divora il tempo",
+        hull: 70,
+        armor: 5,
+        damage: 17
     },
 
     {
         name: "AETHER GOLEM",
-        hull: 125,
-        attack: 20,
-        armor: 10,
-        ability: "HEAVY ARMOR"
+        description: "costrutto alimentato da energia eterica",
+        hull: 80,
+        armor: 8,
+        damage: 18
     },
 
     {
         name: "RUST MAW",
-        hull: 140,
-        attack: 21,
+        description: "enorme macchina divoratrice",
+        hull: 90,
         armor: 7,
-        ability: "CORROSION"
+        damage: 20
     },
 
     {
         name: "TICKING SPIDER",
-        hull: 150,
-        attack: 22,
-        armor: 5,
-        ability: "SABOTAGE"
+        description: "piccolo automa estremamente aggressivo",
+        hull: 55,
+        armor: 3,
+        damage: 22
     },
 
     {
         name: "ANCIENT AUTOMATON",
-        hull: 175,
-        attack: 24,
+        description: "macchina proveniente da un'epoca dimenticata",
+        hull: 110,
         armor: 10,
-        ability: "REPAIR"
+        damage: 24
     },
 
     {
         name: "CORVALI ENGINE",
-        hull: 220,
-        attack: 28,
+        description: "una macchina che sembra conoscere il tuo nome",
+        hull: 150,
         armor: 12,
-        ability: "OVERCLOCK"
+        damage: 28
     }
 
 ];
 
 
-/* =========================
-   UTILITY
-   ========================= */
+/* =========================================================
+   FUNZIONI DOM
+========================================================= */
 
 function getElement(id) {
     return document.getElementById(id);
 }
 
 
-function logMessage(message) {
+function setText(id, value) {
 
-    const log = getElement("log");
+    const element = getElement(id);
 
-    if (!log) {
+    if (element) {
+        element.textContent = value;
+    }
+}
+
+
+function showElement(id) {
+
+    const element = getElement(id);
+
+    if (element) {
+        element.classList.remove("hidden");
+    }
+}
+
+
+function hideElement(id) {
+
+    const element = getElement(id);
+
+    if (element) {
+        element.classList.add("hidden");
+    }
+}
+
+
+/* =========================================================
+   MESSAGGI
+========================================================= */
+
+function showMessage(text, type = COLORS.SYSTEM) {
+
+    const message = getElement("message");
+
+    if (!message) {
         return;
     }
 
-    const entry = document.createElement("div");
+    message.textContent = text;
 
-    entry.textContent = message;
+    message.className = "";
 
-    log.prepend(entry);
+    message.classList.add(type);
+}
 
-    while (log.children.length > 12) {
-        log.removeChild(log.lastChild);
+
+/* =========================================================
+   CALCOLO ECHOES
+========================================================= */
+
+function getEchoBonus(property) {
+
+    let total = 0;
+
+    equippedEchoes.forEach(echo => {
+
+        if (echo.effect && echo.effect[property]) {
+            total += echo.effect[property];
+        }
+
+    });
+
+    return total;
+}
+
+
+function getDamageMultiplier() {
+
+    let multiplier = 1;
+
+    equippedEchoes.forEach(echo => {
+
+        if (
+            echo.effect &&
+            echo.effect.damageMultiplier
+        ) {
+            multiplier *= echo.effect.damageMultiplier;
+        }
+
+    });
+
+    return multiplier;
+}
+
+
+function hasEcho(name) {
+
+    return equippedEchoes.some(
+        echo => echo.name === name
+    );
+}
+
+
+/* =========================================================
+   AVVIO PARTITA
+========================================================= */
+
+function startNewRun() {
+
+    hideElement("main-menu");
+    showElement("game-screen");
+
+    cycle = 1;
+    cogs = 0;
+
+    maxHull =
+        100 +
+        getEchoBonus("maxHull");
+
+    hull = maxHull;
+
+    maxPressure =
+        100 +
+        getEchoBonus("maxPressure");
+
+    pressure =
+        Math.max(
+            0,
+            getEchoBonus("startingPressure")
+        );
+
+    baseTorque = 10;
+    clockPower = 10;
+
+    hand = [];
+    handValue = 0;
+    aceCount = 0;
+
+    blackjack = false;
+    bust = false;
+    combatStarted = false;
+    playerStood = false;
+    doubleUsed = false;
+
+    equippedEchoes = [];
+
+    gameActive = true;
+
+    showMessage(
+        "System ready. The descent begins.",
+        COLORS.SYSTEM
+    );
+
+    newEncounter();
+}
+
+
+/* =========================================================
+   NUOVO SCONTRO
+========================================================= */
+
+function newEncounter() {
+
+    if (!gameActive) {
+        return;
+    }
+
+    combatStarted = true;
+    playerStood = false;
+    doubleUsed = false;
+    blackjack = false;
+    bust = false;
+
+    const enemyIndex =
+        Math.min(
+            ENEMIES.length - 1,
+            Math.floor((cycle - 1) / 3)
+        );
+
+    const baseEnemy =
+        ENEMIES[
+            Math.floor(
+                Math.random() *
+                (enemyIndex + 1)
+            )
+        ];
+
+    const scaling =
+        Math.max(
+            0,
+            cycle - 1
+        );
+
+    enemy = {
+
+        name: baseEnemy.name,
+
+        description:
+            baseEnemy.description,
+
+        hull:
+            Math.floor(
+                baseEnemy.hull *
+                (1 + scaling * 0.08)
+            ),
+
+        maxHull:
+            Math.floor(
+                baseEnemy.hull *
+                (1 + scaling * 0.08)
+            ),
+
+        armor:
+            Math.max(
+                0,
+                baseEnemy.armor +
+                Math.floor(scaling / 5) -
+                getEchoBonus(
+                    "enemyArmorReduction"
+                )
+            ),
+
+        damage:
+            Math.floor(
+                baseEnemy.damage *
+                (1 + scaling * 0.05)
+            )
+
+    };
+
+    dealHand();
+
+    render();
+
+    showMessage(
+        `${enemy.name} encountered. (${enemy.description})`,
+        COLORS.ENEMY
+    );
+}
+
+
+/* =========================================================
+   CREAZIONE MANO
+========================================================= */
+
+function dealHand() {
+
+    hand = [];
+
+    hand.push(drawCard());
+    hand.push(drawCard());
+
+    calculateHand();
+
+    if (handValue === 21) {
+        naturalBlackjack();
     }
 }
 
 
-function randomNumber(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+/* =========================================================
+   CARTE
+========================================================= */
+
+const SUITS = [
+    "♠",
+    "♥",
+    "♦",
+    "♣"
+];
 
 
-/* =========================
-   CARDS
-   ========================= */
+const RANKS = [
+    "A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "J",
+    "Q",
+    "K"
+];
+
 
 function drawCard() {
 
-    const suits = ["SPADES", "HEARTS", "DIAMONDS", "CLUBS"];
+    const rank =
+        RANKS[
+            Math.floor(
+                Math.random() *
+                RANKS.length
+            )
+        ];
 
-    const suit = suits[randomNumber(0, suits.length - 1)];
+    const suit =
+        SUITS[
+            Math.floor(
+                Math.random() *
+                SUITS.length
+            )
+        ];
 
-    const rankNumber = randomNumber(1, 13);
-
-    let rank;
     let value;
 
-    if (rankNumber === 1) {
-        rank = "A";
+    if (rank === "A") {
         value = 11;
     }
-    else if (rankNumber === 11) {
-        rank = "J";
-        value = 10;
-    }
-    else if (rankNumber === 12) {
-        rank = "Q";
-        value = 10;
-    }
-    else if (rankNumber === 13) {
-        rank = "K";
+    else if (
+        rank === "J" ||
+        rank === "Q" ||
+        rank === "K"
+    ) {
         value = 10;
     }
     else {
-        rank = String(rankNumber);
-        value = rankNumber;
+        value = Number(rank);
     }
 
     return {
-        rank: rank,
-        suit: suit,
-        value: value
+        rank,
+        suit,
+        value
     };
 }
 
 
+/* =========================================================
+   CALCOLO MANO
+========================================================= */
+
 function calculateHand() {
 
     let total = 0;
+
     let aces = 0;
 
-    for (const card of hand) {
+    hand.forEach(card => {
 
         total += card.value;
 
         if (card.rank === "A") {
             aces++;
         }
-    }
 
-    while (total > 21 && aces > 0) {
+    });
+
+    while (
+        total > 21 &&
+        aces > 0
+    ) {
 
         total -= 10;
 
@@ -500,392 +782,32 @@ function calculateHand() {
 
     blackjack =
         hand.length === 2 &&
-        hand.some(card => card.rank === "A") &&
-        hand.some(card => ["10", "J", "Q", "K"].includes(card.rank));
+        handValue === 21;
 
-    bust = handValue > 21;
+    bust =
+        handValue > 21;
+
+    return handValue;
 }
 
 
-function renderCards() {
-
-    const cardsContainer = getElement("cards");
-
-    if (!cardsContainer) {
-        return;
-    }
-
-    cardsContainer.innerHTML = "";
-
-    for (const card of hand) {
-
-        const cardElement = document.createElement("div");
-
-        cardElement.className = "card";
-
-        const suitSymbol = {
-            SPADES: "S",
-            HEARTS: "H",
-            DIAMONDS: "D",
-            CLUBS: "C"
-        }[card.suit];
-
-        cardElement.innerHTML =
-            "<span>" +
-            card.rank +
-            "</span>" +
-            "<small>" +
-            suitSymbol +
-            "</small>";
-
-        cardsContainer.appendChild(cardElement);
-    }
-}
-
-
-/* =========================
-   ECHOES
-   ========================= */
-
-function hasEcho(name) {
-
-    return equippedEchoes.some(function (echo) {
-        return echo.name === name;
-    });
-}
-
-
-function applyCycleEchoes() {
-
-    for (const echo of equippedEchoes) {
-
-        if (typeof echo.cycleStart === "function") {
-            echo.cycleStart();
-        }
-    }
-}
-
-
-function applyImmediateEchoes() {
-
-    for (const echo of equippedEchoes) {
-
-        if (typeof echo.effect === "function") {
-            echo.effect();
-        }
-    }
-}
-
-
-function applyHandEchoes() {
-
-    if (hasEcho("CLOCKMAKER")) {
-        clockPower += 2;
-    }
-
-    if (hasEcho("MASTER CLOCK")) {
-        clockPower += 5;
-    }
-
-    if (hasEcho("STEAM CORE")) {
-        baseTorque += 3;
-    }
-
-    if (hasEcho("AUTOMATON")) {
-        baseTorque += 5;
-    }
-
-    if (hasEcho("HIGH PRESSURE PISTON")) {
-        baseTorque += Math.floor(pressure / 10);
-    }
-
-    if (hasEcho("CHRONO CORE") && cycle % 3 === 0) {
-        clockPower += 5;
-    }
-
-    if (hasEcho("AEON GEAR") && cycle % 10 === 0) {
-        clockPower += 20;
-    }
-}
-
-
-function applyValueEchoes() {
-
-    if (handValue === 21) {
-
-        if (hasEcho("OLD SPRING")) {
-            clockPower += 5;
-        }
-
-        if (hasEcho("PERFECT GEAR")) {
-            clockPower += 10;
-        }
-    }
-
-    if (handValue >= 18) {
-
-        if (hasEcho("BRASS EYE")) {
-            baseTorque += 5;
-        }
-    }
-
-    if (handValue >= 20) {
-
-        if (hasEcho("TIME SPRING")) {
-            clockPower += 8;
-        }
-
-        if (hasEcho("GOLDEN PISTON")) {
-            baseTorque += 10;
-        }
-    }
-}
-
-
-function applyBlackjackEchoes() {
-
-    if (!blackjack) {
-        return;
-    }
-
-    if (hasEcho("LOST ESCAPEMENT")) {
-        clockPower += 10;
-    }
-
-    if (hasEcho("INFINITE SPRING")) {
-        baseTorque += 15;
-    }
-
-    if (hasEcho("THE FIRST GEAR")) {
-        baseTorque = Math.max(baseTorque, 35);
-    }
-}
-
-
-/* =========================
-   NEW RUN
-   ========================= */
-
-function startNewRun() {
-
-    cycle = 1;
-
-    cogs = 0;
-
-    maxHull = 100;
-    hull = 100;
-
-    pressure = 0;
-
-    baseTorque = 0;
-    clockPower = 0;
-
-    hand = [];
-    handValue = 0;
-
-    blackjack = false;
-    bust = false;
-
-    enemy = null;
-
-    combatStarted = false;
-
-    equippedEchoes = [];
-
-    getElement("startOverlay").style.display = "none";
-
-    getElement("gameOverModal").classList.add("hidden");
-
-    logMessage("NEW RUN INITIALIZED.");
-
-    newEncounter();
-
-    render();
-}
-
-
-/* =========================
-   ENCOUNTER
-   ========================= */
-
-function getTier() {
-
-    return Math.floor((cycle - 1) / 10) + 1;
-}
-
-
-function getEnemyForCycle() {
-
-    const tier = getTier();
-
-    let poolSize = Math.min(
-        ENEMIES.length,
-        Math.max(3, tier * 3)
-    );
-
-    const index = randomNumber(0, poolSize - 1);
-
-    const baseEnemy = ENEMIES[index];
-
-    const scale = 1 + ((tier - 1) * 0.25);
-
-    return {
-        name: baseEnemy.name,
-        maxHull: Math.round(baseEnemy.hull * scale),
-        hull: Math.round(baseEnemy.hull * scale),
-        attack: Math.round(baseEnemy.attack * scale),
-        armor: Math.round(baseEnemy.armor * scale),
-        ability: baseEnemy.ability
-    };
-}
-
-
-function newEncounter() {
-
-    enemy = getEnemyForCycle();
-
-    pressure = 0;
-
-    baseTorque = 0;
-
-    clockPower = 0;
-
-    hand = [];
-
-    handValue = 0;
-
-    blackjack = false;
-
-    bust = false;
-
-    combatStarted = true;
-
-    logMessage(
-        "ENCOUNTER: " +
-        enemy.name +
-        "."
-    );
-
-    logMessage(
-        "SYSTEM: " +
-        enemy.ability +
-        "."
-    );
-
-    dealHand();
-
-    applyCycleEchoes();
-
-    render();
-}
-
-
-/* =========================
-   DEAL HAND
-   ========================= */
-
-function dealHand() {
-
-    hand = [];
-
-    hand.push(drawCard());
-    hand.push(drawCard());
-
-    baseTorque = 0;
-    clockPower = 0;
-
-    calculateHand();
-
-    if (blackjack) {
-        naturalBlackjack();
-    }
-    else {
-        baseTorque = handValue;
-
-        applyHandEchoes();
-
-        applyValueEchoes();
-
-        calculateClockPower();
-    }
-
-    renderCards();
-
-    render();
-}
-
-
-function calculateClockPower() {
-
-    if (blackjack) {
-        return;
-    }
-
-    if (handValue === 18) {
-        clockPower += 3;
-    }
-
-    if (handValue === 19) {
-        clockPower += 5;
-    }
-
-    if (handValue === 20) {
-        clockPower += 8;
-    }
-
-    if (handValue === 21) {
-        clockPower += 12;
-    }
-
-    applyValueEchoes();
-
-    if (hasEcho("CORVALI ECHO")) {
-        clockPower = Math.round(clockPower * 1.25);
-    }
-}
-
-
-function naturalBlackjack() {
-
-    blackjack = true;
-
-    baseTorque = 25;
-
-    clockPower = 15;
-
-    applyBlackjackEchoes();
-
-    applyHandEchoes();
-
-    if (hasEcho("CORVALI ECHO")) {
-        clockPower = Math.round(clockPower * 1.25);
-    }
-
-    logMessage("NATURAL BLACKJACK.");
-}
-
-
-/* =========================
+/* =========================================================
    HIT
-   ========================= */
+========================================================= */
 
 function hit() {
 
-    if (!combatStarted || !enemy) {
-        return;
-    }
-
-    if (bust) {
+    if (!canPlayerAct()) {
         return;
     }
 
     hand.push(drawCard());
 
-    pressure += 5;
+    addPressure(5);
 
     calculateHand();
 
-    renderCards();
+    render();
 
     if (bust) {
 
@@ -894,43 +816,31 @@ function hit() {
         return;
     }
 
-    baseTorque = handValue;
+    if (blackjack) {
 
-    clockPower = 0;
+        naturalBlackjack();
 
-    applyHandEchoes();
-
-    calculateClockPower();
-
-    logMessage(
-        "HIT: HAND VALUE " +
-        handValue +
-        "."
-    );
-
-    checkPressure();
-
-    if (enemy && enemy.hull > 0) {
-        enemyAttack();
+        return;
     }
 
-    render();
+    showMessage(
+        `Card drawn. (${handValue} total value)`,
+        COLORS.PLAYER
+    );
 }
 
 
-/* =========================
+/* =========================================================
    STAND
-   ========================= */
+========================================================= */
 
 function stand() {
 
-    if (!combatStarted || !enemy) {
+    if (!canPlayerAct()) {
         return;
     }
 
-    if (bust) {
-        return;
-    }
+    playerStood = true;
 
     calculateHand();
 
@@ -939,46 +849,44 @@ function stand() {
         return;
     }
 
-    baseTorque = handValue;
-
-    applyHandEchoes();
-
-    calculateClockPower();
-
-    applyValueEchoes();
-
-    logMessage(
-        "STAND: HAND VALUE " +
-        handValue +
-        "."
+    showMessage(
+        `Hand locked at ${handValue}. (your turn is over)`,
+        COLORS.PLAYER
     );
 
     resolveDamage();
 }
 
 
-/* =========================
+/* =========================================================
    DOUBLE
-   ========================= */
+========================================================= */
 
 function doubleDown() {
 
-    if (!combatStarted || !enemy) {
+    if (!canPlayerAct()) {
         return;
     }
 
-    if (hand.length > 2) {
-        logMessage("DOUBLE IS ONLY AVAILABLE ON THE INITIAL HAND.");
+    if (doubleUsed) {
+
+        showMessage(
+            "Double unavailable. (you can only double once per hand)",
+            COLORS.SYSTEM
+        );
+
         return;
     }
+
+    doubleUsed = true;
 
     hand.push(drawCard());
 
-    pressure += 10;
+    addPressure(10);
 
     calculateHand();
 
-    renderCards();
+    render();
 
     if (bust) {
 
@@ -987,113 +895,218 @@ function doubleDown() {
         return;
     }
 
-    baseTorque = handValue;
-
-    clockPower = 0;
-
-    applyHandEchoes();
-
-    calculateClockPower();
-
-    if (hasEcho("OVERDRIVE")) {
-        clockPower += 5;
-    }
-
-    logMessage(
-        "DOUBLE: HAND VALUE " +
-        handValue +
-        "."
-    );
-
     resolveDamage();
 }
 
 
-/* =========================
-   BUST
-   ========================= */
+/* =========================================================
+   BLACKJACK NATURALE
+========================================================= */
 
-function handleBust() {
+function naturalBlackjack() {
 
-    bust = true;
-
-    pressure += 20;
-
-    logMessage("OVERLOAD: HAND BUSTED.");
-
-    if (hasEcho("BROKEN GEAR")) {
-
-        clockPower += 8;
-
-        logMessage("BROKEN GEAR ACTIVATED.");
-    }
-
-    if (hasEcho("BLACK GEAR") && enemy) {
-
-        enemy.hull -= 10;
-
-        if (enemy.hull < 0) {
-            enemy.hull = 0;
-        }
-
-        logMessage("BLACK GEAR DAMAGED THE ENEMY.");
-    }
-
-    checkPressure();
-
-    if (enemy && enemy.hull > 0) {
-        enemyAttack();
-    }
-
-    setTimeout(function () {
-
-        if (combatStarted && enemy && enemy.hull > 0) {
-            dealHand();
-        }
-
-    }, 700);
-
-    render();
-}
-
-
-/* =========================
-   DAMAGE
-   ========================= */
-
-function resolveDamage() {
-
-    if (!enemy) {
+    if (!combatStarted) {
         return;
     }
 
-    let damage =
+    blackjack = true;
+
+    showMessage(
+        "NATURAL BLACKJACK. (perfect hand)",
+        COLORS.PLAYER
+    );
+
+    resolveDamage(true);
+}
+
+
+/* =========================================================
+   CLOCK POWER
+========================================================= */
+
+function calculateClockPower() {
+
+    let power =
+        10 +
+        getEchoBonus("clockPower");
+
+    power +=
         Math.floor(
-            (baseTorque * clockPower) / 10
+            cycle / 10
+        ) * 2;
+
+    return power;
+}
+
+
+/* =========================================================
+   BASE TORQUE
+========================================================= */
+
+function calculateBaseTorque() {
+
+    let torque =
+        10 +
+        getEchoBonus("baseTorque");
+
+    torque +=
+        Math.floor(
+            cycle / 10
+        ) * 2;
+
+    return torque;
+}
+
+
+/* =========================================================
+   PRESSIONE
+========================================================= */
+
+function addPressure(amount) {
+
+    const reduction =
+        getEchoBonus(
+            "pressureReduction"
         );
 
-    if (damage < 1) {
-        damage = 1;
+    const finalAmount =
+        Math.max(
+            0,
+            amount - reduction
+        );
+
+    pressure += finalAmount;
+
+    if (pressure > maxPressure) {
+
+        pressure = maxPressure;
+
+        handleOverheat();
+    }
+}
+
+
+function handleOverheat() {
+
+    hull -= 15;
+
+    pressure = 0;
+
+    showMessage(
+        "OVERHEAT. (the boiler vents violently and damages the hull)",
+        COLORS.SYSTEM
+    );
+
+    if (hull <= 0) {
+        gameOver();
+    }
+}
+
+
+/* =========================================================
+   VENT
+========================================================= */
+
+function vent() {
+
+    if (!gameActive) {
+        return;
     }
 
-    let armor = enemy.armor;
+    if (pressure <= 0) {
 
-    if (hasEcho("CORVALI LENS")) {
-        armor = Math.max(0, armor - 5);
+        showMessage(
+            "No pressure to vent. (the boiler is already calm)",
+            COLORS.SYSTEM
+        );
+
+        return;
     }
 
-    damage = Math.max(1, damage - armor);
+    const oldPressure = pressure;
+
+    pressure = Math.max(
+        0,
+        pressure - 25
+    );
+
+    const hullRecovery =
+        getEchoBonus("ventHull");
+
+    if (hullRecovery > 0) {
+
+        hull = Math.min(
+            maxHull,
+            hull + hullRecovery
+        );
+    }
+
+    render();
+
+    showMessage(
+        `Vent complete. (${oldPressure - pressure} pressure released)`,
+        COLORS.PLAYER
+    );
+}
+
+
+/* =========================================================
+   DANNO
+========================================================= */
+
+function resolveDamage(isBlackjack = false) {
+
+    if (!enemy || !gameActive) {
+        return;
+    }
+
+    baseTorque =
+        calculateBaseTorque();
+
+    clockPower =
+        calculateClockPower();
+
+    let damage;
+
+    if (isBlackjack || blackjack) {
+
+        baseTorque += 15;
+        clockPower += 5;
+    }
+
+    damage =
+        Math.floor(
+            baseTorque *
+            clockPower /
+            10
+        );
+
+    damage =
+        Math.floor(
+            damage *
+            getDamageMultiplier()
+        );
+
+    damage -= enemy.armor;
+
+    damage +=
+        getEchoBonus(
+            "minimumDamage"
+        );
+
+    damage =
+        Math.max(
+            1,
+            damage
+        );
 
     enemy.hull -= damage;
 
-    if (enemy.hull < 0) {
-        enemy.hull = 0;
-    }
+    render();
 
-    logMessage(
-        "DAMAGE OUTPUT: " +
-        damage +
-        "."
+    showMessage(
+        `DIRECT HIT. (${damage} damage dealt)`,
+        COLORS.PLAYER
     );
 
     if (enemy.hull <= 0) {
@@ -1103,499 +1116,382 @@ function resolveDamage() {
         return;
     }
 
-    pressure += 5;
-
-    checkPressure();
-
     enemyAttack();
-
-    setTimeout(function () {
-
-        if (combatStarted && enemy && enemy.hull > 0) {
-            dealHand();
-        }
-
-    }, 700);
-
-    render();
 }
 
 
-/* =========================
-   ENEMY ATTACK
-   ========================= */
+/* =========================================================
+   ATTACCO NEMICO
+========================================================= */
 
 function enemyAttack() {
 
-    if (!enemy || enemy.hull <= 0) {
+    if (!enemy || !gameActive) {
         return;
     }
 
-    let damage = enemy.attack;
+    hull -= enemy.damage;
 
-    if (hasEcho("COUNTERWEIGHT")) {
-        damage -= 2;
-    }
+    render();
 
-    damage = Math.max(1, damage);
-
-    if (enemy.ability === "PRESSURE") {
-        pressure += 5;
-    }
-
-    if (enemy.ability === "HEAT") {
-        pressure += 8;
-    }
-
-    if (enemy.ability === "CORROSION") {
-        damage += 3;
-    }
-
-    if (enemy.ability === "OVERCLOCK") {
-        damage += 5;
-    }
-
-    hull -= damage;
-
-    if (hull < 0) {
-        hull = 0;
-    }
-
-    logMessage(
-        enemy.name +
-        " ATTACKS FOR " +
-        damage +
-        "."
+    showMessage(
+        `${enemy.name} attacks. (${enemy.damage} hull damage)`,
+        COLORS.ENEMY
     );
-
-    checkPressure();
 
     if (hull <= 0) {
+
         gameOver();
+
+        return;
     }
 
-    render();
-}
+    hand = [];
 
+    calculateHand();
 
-/* =========================
-   PRESSURE
-   ========================= */
+    setTimeout(function () {
 
-function checkPressure() {
+        if (gameActive) {
 
-    let pressureLimit = maxPressure;
+            dealHand();
 
-    if (hasEcho("PRESSURE CHAMBER")) {
-        pressureLimit = 120;
-    }
+            render();
 
-    if (pressure > pressureLimit) {
-
-        hull -= 15;
-
-        pressure = 0;
-
-        logMessage("OVERHEAT: 15 HULL DAMAGE.");
-
-        if (hull <= 0) {
-            hull = 0;
-            gameOver();
+            showMessage(
+                "Your turn. (draw cards or stop)",
+                COLORS.PLAYER
+            );
         }
-    }
+
+    }, 500);
 }
 
 
-function vent() {
+/* =========================================================
+   BUST
+========================================================= */
 
-    if (!combatStarted) {
-        return;
-    }
+function handleBust() {
 
-    if (pressure <= 0) {
-        logMessage("PRESSURE IS ALREADY STABLE.");
-        return;
-    }
+    bust = true;
 
-    let amount = 30;
-
-    if (hasEcho("PRESSURE VALVE")) {
-        amount = 40;
-    }
-
-    if (hasEcho("STEAM VALVE")) {
-        amount += 10;
-    }
-
-    if (hasEcho("VOID VALVE")) {
-        amount = 45;
-    }
-
-    pressure = Math.max(
-        0,
-        pressure - amount
-    );
-
-    if (hasEcho("BRASS LUNG")) {
-
-        hull = Math.min(
-            maxHull,
-            hull + 5
-        );
-
-        logMessage("BRASS LUNG RESTORED 5 HULL.");
-    }
-
-    logMessage(
-        "VENT: " +
-        amount +
-        " PRESSURE RELEASED."
-    );
+    addPressure(15);
 
     render();
-}
 
-
-/* =========================
-   DEFEAT ENEMY
-   ========================= */
-
-function defeatEnemy() {
-
-    combatStarted = false;
-
-    const reward =
-        8 +
-        (getTier() * 4);
-
-    cogs += reward;
-
-    logMessage(
-        enemy.name +
-        " DESTROYED."
-    );
-
-    logMessage(
-        "REWARD: " +
-        reward +
-        " COGS."
+    showMessage(
+        `BUST. (${handValue} exceeds 21)`,
+        COLORS.SYSTEM
     );
 
     setTimeout(function () {
 
-        cycle++;
+        if (gameActive) {
+            enemyAttack();
+        }
 
-        openWorkshop();
-
-        render();
-
-    }, 700);
+    }, 600);
 }
 
 
-/* =========================
-   WORKSHOP
-   ========================= */
+/* =========================================================
+   SCONFITTA NEMICO
+========================================================= */
+
+function defeatEnemy() {
+
+    const reward =
+        10 +
+        cycle * 3;
+
+    cogs += reward;
+
+    const recovery =
+        getEchoBonus(
+            "victoryHull"
+        );
+
+    if (recovery > 0) {
+
+        hull =
+            Math.min(
+                maxHull,
+                hull + recovery
+            );
+    }
+
+    render();
+
+    showMessage(
+        `${enemy.name} destroyed. (+${reward} COGS)`,
+        COLORS.PLAYER
+    );
+
+    combatStarted = false;
+
+    setTimeout(function () {
+
+        if (!gameActive) {
+            return;
+        }
+
+        cycle++;
+
+        generateShop();
+
+        newEncounter();
+
+    }, 1000);
+}
+
+
+/* =========================================================
+   SHOP
+========================================================= */
+
+function generateShop() {
+
+    const available =
+        ECHOES.filter(
+            echo =>
+                !equippedEchoes.some(
+                    owned =>
+                        owned.name === echo.name
+                )
+        );
+
+    shopEchoes = [];
+
+    const shuffled =
+        [...available].sort(
+            () => Math.random() - 0.5
+        );
+
+    shopEchoes =
+        shuffled.slice(0, 4);
+}
+
 
 function openWorkshop() {
 
-    const modal = getElement("workshopModal");
+    generateShop();
 
-    if (!modal) {
+    const workshop =
+        getElement("workshop");
+
+    if (!workshop) {
         return;
     }
 
-    generateShop();
+    renderWorkshop();
 
-    modal.classList.remove("hidden");
+    workshop.classList.remove(
+        "hidden"
+    );
 }
 
 
 function closeWorkshop() {
 
-    const modal = getElement("workshopModal");
-
-    if (!modal) {
-        return;
-    }
-
-    modal.classList.add("hidden");
-
-    if (!combatStarted) {
-        newEncounter();
-    }
+    hideElement("workshop");
 }
 
 
-function generateShop() {
+function renderWorkshop() {
 
-    const container = getElement("shopItems");
+    const shop =
+        getElement("shop");
 
-    if (!container) {
+    if (!shop) {
         return;
     }
 
-    container.innerHTML = "";
+    shop.innerHTML = "";
 
-    const available = ECHOES
-        .filter(function (echo) {
-            return !hasEcho(echo.name);
-        })
-        .sort(function () {
-            return Math.random() - 0.5;
-        })
-        .slice(0, 4);
+    if (shopEchoes.length === 0) {
 
-    for (const echo of available) {
+        shop.innerHTML =
+            "<p class='system-text'>No Echoes available. (all current Echoes have been acquired)</p>";
 
-        const price =
-            echo.rarity === "WORN"
-                ? 10
-                : echo.rarity === "FORGED"
-                    ? 18
-                    : echo.rarity === "ENGINEERED"
-                        ? 28
-                        : 45;
-
-        const item = document.createElement("div");
-
-        item.className = "shop-item";
-
-        item.innerHTML =
-            "<div class=\"shop-item-name\">" +
-            echo.name +
-            "</div>" +
-
-            "<div class=\"shop-item-rarity\">" +
-            echo.rarity +
-            "</div>" +
-
-            "<div class=\"shop-item-description\">" +
-            echo.description +
-            "</div>" +
-
-            "<button class=\"small-button\">BUY " +
-            price +
-            " COGS</button>";
-
-        const button = item.querySelector("button");
-
-        button.addEventListener(
-            "click",
-            function () {
-                buyEcho(echo.name, price);
-            }
-        );
-
-        container.appendChild(item);
+        return;
     }
 
-    if (available.length === 0) {
+    shopEchoes.forEach(
+        (echo, index) => {
 
-        container.innerHTML =
-            "<div class=\"shop-item\">" +
-            "<div class=\"shop-item-name\">" +
-            "NO ECHOES AVAILABLE" +
-            "</div>" +
-            "</div>";
-    }
+            const card =
+                document.createElement("div");
+
+            card.className =
+                "echo-card";
+
+            card.innerHTML = `
+                <h3 class="player-text">
+                    ${echo.name}
+                </h3>
+
+                <p class="player-text">
+                    (${echo.description})
+                </p>
+
+                <button
+                    class="game-button player-action"
+                    onclick="buyEcho(${index})"
+                >
+                    INSTALL
+                    <span>(install this Echo)</span>
+                </button>
+            `;
+
+            shop.appendChild(card);
+        }
+    );
 }
 
 
-function buyEcho(name, price) {
+function buyEcho(index) {
 
-    if (equippedEchoes.length >= 3) {
-
-        logMessage(
-            "ALL THREE ECHO SLOTS ARE FULL."
-        );
-
-        return;
-    }
-
-    if (cogs < price) {
-
-        logMessage(
-            "INSUFFICIENT COGS."
-        );
-
-        return;
-    }
-
-    const echo = ECHOES.find(function (item) {
-        return item.name === name;
-    });
+    const echo =
+        shopEchoes[index];
 
     if (!echo) {
         return;
     }
 
-    if (hasEcho(name)) {
+    if (equippedEchoes.length >= 3) {
+
+        showMessage(
+            "Echo slots full. (maximum 3 equipped Echoes)",
+            COLORS.SYSTEM
+        );
+
         return;
     }
 
-    cogs -= price;
-
     equippedEchoes.push(echo);
 
-    logMessage(
-        "ECHO EQUIPPED: " +
-        echo.name +
-        "."
+    applyEchoImmediately(echo);
+
+    showMessage(
+        `${echo.name} installed. (${echo.description})`,
+        COLORS.PLAYER
     );
 
-    generateShop();
+    renderWorkshop();
 
     render();
 }
 
 
-/* =========================
-   RENDER
-   ========================= */
+/* =========================================================
+   APPLICA ECHO
+========================================================= */
 
-function render() {
+function applyEchoImmediately(echo) {
 
-    if (getElement("cycle")) {
-        getElement("cycle").textContent = cycle;
+    if (!echo || !echo.effect) {
+        return;
     }
 
-    if (getElement("cogs")) {
-        getElement("cogs").textContent = cogs;
+    const effect =
+        echo.effect;
+
+    if (effect.maxHull) {
+
+        maxHull +=
+            effect.maxHull;
+
+        hull +=
+            effect.maxHull;
     }
 
-    if (getElement("hull")) {
-        getElement("hull").textContent = hull;
+    if (effect.maxPressure) {
+
+        maxPressure +=
+            effect.maxPressure;
     }
-
-    if (getElement("maxHull")) {
-        getElement("maxHull").textContent = maxHull;
-    }
-
-    if (getElement("pressure")) {
-        getElement("pressure").textContent = pressure;
-    }
-
-    if (getElement("maxPressure")) {
-        getElement("maxPressure").textContent =
-            hasEcho("PRESSURE CHAMBER")
-                ? 120
-                : 100;
-    }
-
-    if (getElement("baseTorque")) {
-        getElement("baseTorque").textContent =
-            Math.max(0, Math.floor(baseTorque));
-    }
-
-    if (getElement("clockPower")) {
-        getElement("clockPower").textContent =
-            Math.max(0, Math.floor(clockPower));
-    }
-
-    if (getElement("handValue")) {
-        getElement("handValue").textContent =
-            handValue;
-    }
-
-    if (enemy) {
-
-        if (getElement("enemyName")) {
-            getElement("enemyName").textContent =
-                enemy.name;
-        }
-
-        if (getElement("enemyHull")) {
-            getElement("enemyHull").textContent =
-                enemy.hull;
-        }
-
-        if (getElement("enemyMaxHull")) {
-            getElement("enemyMaxHull").textContent =
-                enemy.maxHull;
-        }
-
-        if (getElement("enemyAttack")) {
-            getElement("enemyAttack").textContent =
-                enemy.attack;
-        }
-
-        if (getElement("enemyArmor")) {
-            getElement("enemyArmor").textContent =
-                enemy.armor;
-        }
-
-        if (getElement("enemyAbility")) {
-            getElement("enemyAbility").textContent =
-                enemy.ability;
-        }
-
-        const enemyBar =
-            getElement("enemyHullBar");
-
-        if (enemyBar) {
-
-            const percentage =
-                enemy.maxHull > 0
-                    ? (enemy.hull / enemy.maxHull) * 100
-                    : 0;
-
-            enemyBar.style.width =
-                Math.max(0, percentage) + "%";
-        }
-    }
-
-    const pressureBar =
-        getElement("pressureBar");
-
-    if (pressureBar) {
-
-        const currentMax =
-            hasEcho("PRESSURE CHAMBER")
-                ? 120
-                : 100;
-
-        const percentage =
-            (pressure / currentMax) * 100;
-
-        pressureBar.style.width =
-            Math.min(100, percentage) + "%";
-    }
-
-    const tierElement =
-        getElement("enemyTier");
-
-    if (tierElement) {
-
-        const tier =
-            getTier();
-
-        const roman = [
-            "I",
-            "II",
-            "III",
-            "IV",
-            "V",
-            "VI"
-        ];
-
-        tierElement.textContent =
-            "TIER " +
-            (roman[tier - 1] || tier);
-    }
-
-    renderEchoes();
 }
 
 
-/* =========================
-   ECHO DISPLAY
-   ========================= */
+/* =========================================================
+   RENDER
+========================================================= */
 
-function renderEchoes() {
+function render() {
+
+    setText(
+        "cycle",
+        cycle
+    );
+
+    setText(
+        "cogs",
+        cogs
+    );
+
+    setText(
+        "hull",
+        Math.max(0, hull)
+    );
+
+    setText(
+        "max-hull",
+        maxHull
+    );
+
+    setText(
+        "pressure",
+        pressure
+    );
+
+    setText(
+        "max-pressure",
+        maxPressure
+    );
+
+
+    if (enemy) {
+
+        setText(
+            "enemy-name",
+            enemy.name
+        );
+
+        setText(
+            "enemy-description",
+            `(${enemy.description})`
+        );
+
+        setText(
+            "enemy-hull",
+            Math.max(
+                0,
+                enemy.hull
+            )
+        );
+
+        setText(
+            "enemy-armor",
+            enemy.armor
+        );
+    }
+
+
+    renderHand();
+
+    updateActionButtons();
+}
+
+
+/* =========================================================
+   RENDER CARTE
+========================================================= */
+
+function renderHand() {
 
     const container =
-        getElement("equippedEchoes");
+        getElement("hand");
 
     if (!container) {
         return;
@@ -1603,99 +1499,230 @@ function renderEchoes() {
 
     container.innerHTML = "";
 
-    if (equippedEchoes.length === 0) {
+    hand.forEach(card => {
 
-        for (let i = 0; i < 3; i++) {
-
-            const slot =
-                document.createElement("div");
-
-            slot.className =
-                "echo-slot empty";
-
-            slot.textContent =
-                "EMPTY";
-
-            container.appendChild(slot);
-        }
-
-        return;
-    }
-
-    for (let i = 0; i < 3; i++) {
-
-        const slot =
+        const cardElement =
             document.createElement("div");
 
-        slot.className =
-            "echo-slot";
+        cardElement.className =
+            "card";
 
-        if (equippedEchoes[i]) {
+        cardElement.textContent =
+            `${card.rank}${card.suit}`;
 
-            slot.innerHTML =
-                "<strong>" +
-                equippedEchoes[i].name +
-                "</strong>" +
-                "<small>" +
-                equippedEchoes[i].rarity +
-                "</small>";
-        }
-        else {
+        container.appendChild(
+            cardElement
+        );
+    });
 
-            slot.classList.add("empty");
-
-            slot.textContent =
-                "EMPTY";
-        }
-
-        container.appendChild(slot);
-    }
+    setText(
+        "hand-value",
+        handValue
+    );
 }
 
 
-/* =========================
+/* =========================================================
+   BOTTONI
+========================================================= */
+
+function canPlayerAct() {
+
+    if (!gameActive) {
+
+        showMessage(
+            "The run has ended. (start a new run)",
+            COLORS.SYSTEM
+        );
+
+        return false;
+    }
+
+    if (!combatStarted) {
+
+        showMessage(
+            "No active encounter. (wait for the next encounter)",
+            COLORS.SYSTEM
+        );
+
+        return false;
+    }
+
+    if (playerStood) {
+
+        showMessage(
+            "Your hand is already locked. (wait for the enemy)",
+            COLORS.SYSTEM
+        );
+
+        return false;
+    }
+
+    return true;
+}
+
+
+function updateActionButtons() {
+
+    const buttons =
+        document.querySelectorAll(
+            ".actions button"
+        );
+
+    buttons.forEach(button => {
+
+        button.disabled =
+            !gameActive ||
+            !combatStarted ||
+            playerStood;
+
+    });
+}
+
+
+/* =========================================================
    GAME OVER
-   ========================= */
+========================================================= */
 
 function gameOver() {
 
+    gameActive = false;
     combatStarted = false;
 
-    const modal =
-        getElement("gameOverModal");
+    hull = 0;
 
-    if (!modal) {
-        return;
-    }
+    render();
 
-    if (getElement("finalCycle")) {
-        getElement("finalCycle").textContent =
-            cycle;
-    }
+    showMessage(
+        `SYSTEM FAILURE. (your descent ends at Cycle ${cycle})`,
+        COLORS.SYSTEM
+    );
 
-    if (getElement("finalCogs")) {
-        getElement("finalCogs").textContent =
-            cogs;
-    }
-
-    modal.classList.remove("hidden");
-
-    logMessage("ENGINE FAILURE.");
+    showGameOverScreen();
 }
 
 
-/* =========================
-   INITIALIZATION
-   ========================= */
+/* =========================================================
+   GAME OVER SCREEN
+========================================================= */
+
+function showGameOverScreen() {
+
+    const existing =
+        document.getElementById(
+            "game-over-screen"
+        );
+
+    if (existing) {
+        existing.remove();
+    }
+
+    const overlay =
+        document.createElement("div");
+
+    overlay.id =
+        "game-over-screen";
+
+    overlay.className =
+        "modal";
+
+    overlay.innerHTML = `
+
+        <div class="modal-content">
+
+            <h2 class="system-text">
+                SYSTEM FAILURE
+            </h2>
+
+            <p class="system-text">
+                (la macchina Corvali non può più proseguire)
+            </p>
+
+            <p class="system-text">
+                CYCLE REACHED:
+                <strong>${cycle}</strong>
+            </p>
+
+            <p class="system-text">
+                COGS COLLECTED:
+                <strong>${cogs}</strong>
+            </p>
+
+            <button
+                class="menu-button player-action"
+                onclick="returnToMenu()"
+            >
+                RETURN
+                <span>(torna al menu principale)</span>
+            </button>
+
+        </div>
+    `;
+
+    document.body.appendChild(
+        overlay
+    );
+}
+
+
+/* =========================================================
+   RITORNO AL MENU
+========================================================= */
+
+function returnToMenu() {
+
+    const gameOver =
+        document.getElementById(
+            "game-over-screen"
+        );
+
+    if (gameOver) {
+        gameOver.remove();
+    }
+
+    hideElement("game-screen");
+    showElement("main-menu");
+
+    gameActive = false;
+    combatStarted = false;
+
+    cycle = 1;
+    cogs = 0;
+
+    maxHull = 100;
+    hull = 100;
+
+    pressure = 0;
+    maxPressure = 100;
+
+    hand = [];
+    enemy = null;
+
+    equippedEchoes = [];
+
+    showMessage(
+        "System ready.",
+        COLORS.SYSTEM
+    );
+}
+
+
+/* =========================================================
+   INIZIALIZZAZIONE
+========================================================= */
 
 document.addEventListener(
     "DOMContentLoaded",
     function () {
 
-        render();
+        hideElement("game-screen");
+        hideElement("workshop");
 
-        logMessage(
-            "CORVALI ENGINE READY."
+        showElement("main-menu");
+
+        console.log(
+            "CORVALI'S ECHOES initialized."
         );
+
     }
 );
