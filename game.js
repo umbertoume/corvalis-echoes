@@ -418,7 +418,9 @@ const ENEMIES = [
 ========================================================= */
 
 function getElement(id) {
+
     return document.getElementById(id);
+
 }
 
 
@@ -429,6 +431,7 @@ function setText(id, value) {
     if (element) {
         element.textContent = value;
     }
+
 }
 
 
@@ -439,6 +442,7 @@ function showElement(id) {
     if (element) {
         element.classList.remove("hidden");
     }
+
 }
 
 
@@ -449,6 +453,7 @@ function hideElement(id) {
     if (element) {
         element.classList.add("hidden");
     }
+
 }
 
 
@@ -469,6 +474,7 @@ function showMessage(text, type = COLORS.SYSTEM) {
     message.className = "";
 
     message.classList.add(type);
+
 }
 
 
@@ -482,13 +488,19 @@ function getEchoBonus(property) {
 
     equippedEchoes.forEach(echo => {
 
-        if (echo.effect && echo.effect[property]) {
+        if (
+            echo.effect &&
+            echo.effect[property]
+        ) {
+
             total += echo.effect[property];
+
         }
 
     });
 
     return total;
+
 }
 
 
@@ -502,12 +514,16 @@ function getDamageMultiplier() {
             echo.effect &&
             echo.effect.damageMultiplier
         ) {
-            multiplier *= echo.effect.damageMultiplier;
+
+            multiplier *=
+                echo.effect.damageMultiplier;
+
         }
 
     });
 
     return multiplier;
+
 }
 
 
@@ -516,6 +532,7 @@ function hasEcho(name) {
     return equippedEchoes.some(
         echo => echo.name === name
     );
+
 }
 
 
@@ -570,6 +587,7 @@ function startNewRun() {
     );
 
     newEncounter();
+
 }
 
 
@@ -592,7 +610,9 @@ function newEncounter() {
     const enemyIndex =
         Math.min(
             ENEMIES.length - 1,
-            Math.floor((cycle - 1) / 3)
+            Math.floor(
+                (cycle - 1) / 3
+            )
         );
 
     const baseEnemy =
@@ -611,7 +631,8 @@ function newEncounter() {
 
     enemy = {
 
-        name: baseEnemy.name,
+        name:
+            baseEnemy.name,
 
         description:
             baseEnemy.description,
@@ -632,7 +653,9 @@ function newEncounter() {
             Math.max(
                 0,
                 baseEnemy.armor +
-                Math.floor(scaling / 5) -
+                Math.floor(
+                    scaling / 5
+                ) -
                 getEchoBonus(
                     "enemyArmorReduction"
                 )
@@ -654,6 +677,7 @@ function newEncounter() {
         `${enemy.name} encountered. (${enemy.description})`,
         COLORS.ENEMY
     );
+
 }
 
 
@@ -665,14 +689,22 @@ function dealHand() {
 
     hand = [];
 
-    hand.push(drawCard());
-    hand.push(drawCard());
+    hand.push(
+        drawCard()
+    );
+
+    hand.push(
+        drawCard()
+    );
 
     calculateHand();
 
     if (handValue === 21) {
+
         naturalBlackjack();
+
     }
+
 }
 
 
@@ -726,17 +758,23 @@ function drawCard() {
     let value;
 
     if (rank === "A") {
+
         value = 11;
+
     }
     else if (
         rank === "J" ||
         rank === "Q" ||
         rank === "K"
     ) {
+
         value = 10;
+
     }
     else {
+
         value = Number(rank);
+
     }
 
     return {
@@ -744,6 +782,7 @@ function drawCard() {
         suit,
         value
     };
+
 }
 
 
@@ -762,7 +801,9 @@ function calculateHand() {
         total += card.value;
 
         if (card.rank === "A") {
+
             aces++;
+
         }
 
     });
@@ -775,9 +816,11 @@ function calculateHand() {
         total -= 10;
 
         aces--;
+
     }
 
     handValue = total;
+
     aceCount = aces;
 
     blackjack =
@@ -788,6 +831,7 @@ function calculateHand() {
         handValue > 21;
 
     return handValue;
+
 }
 
 
@@ -801,7 +845,9 @@ function hit() {
         return;
     }
 
-    hand.push(drawCard());
+    hand.push(
+        drawCard()
+    );
 
     addPressure(5);
 
@@ -814,6 +860,7 @@ function hit() {
         handleBust();
 
         return;
+
     }
 
     if (blackjack) {
@@ -821,12 +868,14 @@ function hit() {
         naturalBlackjack();
 
         return;
+
     }
 
     showMessage(
         `Card drawn. (${handValue} total value)`,
         COLORS.PLAYER
     );
+
 }
 
 
@@ -845,8 +894,11 @@ function stand() {
     calculateHand();
 
     if (handValue > 21) {
+
         handleBust();
+
         return;
+
     }
 
     showMessage(
@@ -855,6 +907,7 @@ function stand() {
     );
 
     resolveDamage();
+
 }
 
 
@@ -876,11 +929,14 @@ function doubleDown() {
         );
 
         return;
+
     }
 
     doubleUsed = true;
 
-    hand.push(drawCard());
+    hand.push(
+        drawCard()
+    );
 
     addPressure(10);
 
@@ -893,9 +949,11 @@ function doubleDown() {
         handleBust();
 
         return;
+
     }
 
     resolveDamage();
+
 }
 
 
@@ -911,12 +969,15 @@ function naturalBlackjack() {
 
     blackjack = true;
 
+    playerStood = true;
+
     showMessage(
         "NATURAL BLACKJACK. (perfect hand)",
         COLORS.PLAYER
     );
 
     resolveDamage(true);
+
 }
 
 
@@ -928,7 +989,9 @@ function calculateClockPower() {
 
     let power =
         10 +
-        getEchoBonus("clockPower");
+        getEchoBonus(
+            "clockPower"
+        );
 
     power +=
         Math.floor(
@@ -936,6 +999,7 @@ function calculateClockPower() {
         ) * 2;
 
     return power;
+
 }
 
 
@@ -947,7 +1011,9 @@ function calculateBaseTorque() {
 
     let torque =
         10 +
-        getEchoBonus("baseTorque");
+        getEchoBonus(
+            "baseTorque"
+        );
 
     torque +=
         Math.floor(
@@ -955,6 +1021,7 @@ function calculateBaseTorque() {
         ) * 2;
 
     return torque;
+
 }
 
 
@@ -977,12 +1044,18 @@ function addPressure(amount) {
 
     pressure += finalAmount;
 
-    if (pressure > maxPressure) {
+    if (
+        pressure >
+        maxPressure
+    ) {
 
-        pressure = maxPressure;
+        pressure =
+            maxPressure;
 
         handleOverheat();
+
     }
+
 }
 
 
@@ -998,8 +1071,11 @@ function handleOverheat() {
     );
 
     if (hull <= 0) {
+
         gameOver();
+
     }
+
 }
 
 
@@ -1021,24 +1097,34 @@ function vent() {
         );
 
         return;
+
     }
 
-    const oldPressure = pressure;
+    const oldPressure =
+        pressure;
 
-    pressure = Math.max(
-        0,
-        pressure - 25
-    );
+    pressure =
+        Math.max(
+            0,
+            pressure - 25
+        );
 
     const hullRecovery =
-        getEchoBonus("ventHull");
-
-    if (hullRecovery > 0) {
-
-        hull = Math.min(
-            maxHull,
-            hull + hullRecovery
+        getEchoBonus(
+            "ventHull"
         );
+
+    if (
+        hullRecovery >
+        0
+    ) {
+
+        hull =
+            Math.min(
+                maxHull,
+                hull + hullRecovery
+            );
+
     }
 
     render();
@@ -1047,6 +1133,7 @@ function vent() {
         `Vent complete. (${oldPressure - pressure} pressure released)`,
         COLORS.PLAYER
     );
+
 }
 
 
@@ -1054,10 +1141,17 @@ function vent() {
    DANNO
 ========================================================= */
 
-function resolveDamage(isBlackjack = false) {
+function resolveDamage(
+    isBlackjack = false
+) {
 
-    if (!enemy || !gameActive) {
+    if (
+        !enemy ||
+        !gameActive
+    ) {
+
         return;
+
     }
 
     baseTorque =
@@ -1068,10 +1162,14 @@ function resolveDamage(isBlackjack = false) {
 
     let damage;
 
-    if (isBlackjack || blackjack) {
+    if (
+        isBlackjack ||
+        blackjack
+    ) {
 
         baseTorque += 15;
         clockPower += 5;
+
     }
 
     damage =
@@ -1087,7 +1185,8 @@ function resolveDamage(isBlackjack = false) {
             getDamageMultiplier()
         );
 
-    damage -= enemy.armor;
+    damage -=
+        enemy.armor;
 
     damage +=
         getEchoBonus(
@@ -1100,7 +1199,8 @@ function resolveDamage(isBlackjack = false) {
             damage
         );
 
-    enemy.hull -= damage;
+    enemy.hull -=
+        damage;
 
     render();
 
@@ -1109,14 +1209,18 @@ function resolveDamage(isBlackjack = false) {
         COLORS.PLAYER
     );
 
-    if (enemy.hull <= 0) {
+    if (
+        enemy.hull <= 0
+    ) {
 
         defeatEnemy();
 
         return;
+
     }
 
     enemyAttack();
+
 }
 
 
@@ -1126,11 +1230,17 @@ function resolveDamage(isBlackjack = false) {
 
 function enemyAttack() {
 
-    if (!enemy || !gameActive) {
+    if (
+        !enemy ||
+        !gameActive
+    ) {
+
         return;
+
     }
 
-    hull -= enemy.damage;
+    hull -=
+        enemy.damage;
 
     render();
 
@@ -1139,32 +1249,75 @@ function enemyAttack() {
         COLORS.ENEMY
     );
 
-    if (hull <= 0) {
+    if (
+        hull <= 0
+    ) {
 
         gameOver();
 
         return;
+
     }
+
+    /*
+       IMPORTANTE:
+
+       Dopo che il giocatore ha fatto STAND,
+       playerStood era rimasto TRUE.
+
+       Se non lo resettiamo qui,
+       updateActionButtons() continuerà
+       a disabilitare tutti i pulsanti.
+
+       Questo era il motivo per cui il gioco
+       sembrava bloccarsi dopo l'attacco.
+    */
 
     hand = [];
 
-    calculateHand();
+    handValue = 0;
+    aceCount = 0;
 
-    setTimeout(function () {
+    blackjack = false;
+    bust = false;
 
-        if (gameActive) {
+    setTimeout(
+        function () {
+
+            if (!gameActive) {
+                return;
+            }
+
+            /*
+               Nuovo turno del giocatore.
+            */
+
+            playerStood = false;
+            doubleUsed = false;
 
             dealHand();
 
             render();
 
-            showMessage(
-                "Your turn. (draw cards or stop)",
-                COLORS.PLAYER
-            );
-        }
+            /*
+               Se la nuova mano è automaticamente
+               diventata Blackjack, naturalBlackjack()
+               ha già gestito il turno.
+            */
 
-    }, 500);
+            if (!blackjack) {
+
+                showMessage(
+                    "Your turn. (draw cards or stop)",
+                    COLORS.PLAYER
+                );
+
+            }
+
+        },
+        500
+    );
+
 }
 
 
@@ -1185,13 +1338,19 @@ function handleBust() {
         COLORS.SYSTEM
     );
 
-    setTimeout(function () {
+    setTimeout(
+        function () {
 
-        if (gameActive) {
-            enemyAttack();
-        }
+            if (gameActive) {
 
-    }, 600);
+                enemyAttack();
+
+            }
+
+        },
+        600
+    );
+
 }
 
 
@@ -1212,13 +1371,17 @@ function defeatEnemy() {
             "victoryHull"
         );
 
-    if (recovery > 0) {
+    if (
+        recovery >
+        0
+    ) {
 
         hull =
             Math.min(
                 maxHull,
                 hull + recovery
             );
+
     }
 
     render();
@@ -1230,19 +1393,23 @@ function defeatEnemy() {
 
     combatStarted = false;
 
-    setTimeout(function () {
+    setTimeout(
+        function () {
 
-        if (!gameActive) {
-            return;
-        }
+            if (!gameActive) {
+                return;
+            }
 
-        cycle++;
+            cycle++;
 
-        generateShop();
+            generateShop();
 
-        newEncounter();
+            newEncounter();
 
-    }, 1000);
+        },
+        1000
+    );
+
 }
 
 
@@ -1257,7 +1424,8 @@ function generateShop() {
             echo =>
                 !equippedEchoes.some(
                     owned =>
-                        owned.name === echo.name
+                        owned.name ===
+                        echo.name
                 )
         );
 
@@ -1265,11 +1433,16 @@ function generateShop() {
 
     const shuffled =
         [...available].sort(
-            () => Math.random() - 0.5
+            () =>
+                Math.random() - 0.5
         );
 
     shopEchoes =
-        shuffled.slice(0, 4);
+        shuffled.slice(
+            0,
+            4
+        );
+
 }
 
 
@@ -1278,7 +1451,9 @@ function openWorkshop() {
     generateShop();
 
     const workshop =
-        getElement("workshop");
+        getElement(
+            "workshop"
+        );
 
     if (!workshop) {
         return;
@@ -1289,19 +1464,25 @@ function openWorkshop() {
     workshop.classList.remove(
         "hidden"
     );
+
 }
 
 
 function closeWorkshop() {
 
-    hideElement("workshop");
+    hideElement(
+        "workshop"
+    );
+
 }
 
 
 function renderWorkshop() {
 
     const shop =
-        getElement("shop");
+        getElement(
+            "shop"
+        );
 
     if (!shop) {
         return;
@@ -1309,19 +1490,27 @@ function renderWorkshop() {
 
     shop.innerHTML = "";
 
-    if (shopEchoes.length === 0) {
+    if (
+        shopEchoes.length === 0
+    ) {
 
         shop.innerHTML =
             "<p class='system-text'>No Echoes available. (all current Echoes have been acquired)</p>";
 
         return;
+
     }
 
     shopEchoes.forEach(
-        (echo, index) => {
+        (
+            echo,
+            index
+        ) => {
 
             const card =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
 
             card.className =
                 "echo-card";
@@ -1344,9 +1533,13 @@ function renderWorkshop() {
                 </button>
             `;
 
-            shop.appendChild(card);
+            shop.appendChild(
+                card
+            );
+
         }
     );
+
 }
 
 
@@ -1359,7 +1552,9 @@ function buyEcho(index) {
         return;
     }
 
-    if (equippedEchoes.length >= 3) {
+    if (
+        equippedEchoes.length >= 3
+    ) {
 
         showMessage(
             "Echo slots full. (maximum 3 equipped Echoes)",
@@ -1367,11 +1562,16 @@ function buyEcho(index) {
         );
 
         return;
+
     }
 
-    equippedEchoes.push(echo);
+    equippedEchoes.push(
+        echo
+    );
 
-    applyEchoImmediately(echo);
+    applyEchoImmediately(
+        echo
+    );
 
     showMessage(
         `${echo.name} installed. (${echo.description})`,
@@ -1381,6 +1581,7 @@ function buyEcho(index) {
     renderWorkshop();
 
     render();
+
 }
 
 
@@ -1388,29 +1589,43 @@ function buyEcho(index) {
    APPLICA ECHO
 ========================================================= */
 
-function applyEchoImmediately(echo) {
+function applyEchoImmediately(
+    echo
+) {
 
-    if (!echo || !echo.effect) {
+    if (
+        !echo ||
+        !echo.effect
+    ) {
+
         return;
+
     }
 
     const effect =
         echo.effect;
 
-    if (effect.maxHull) {
+    if (
+        effect.maxHull
+    ) {
 
         maxHull +=
             effect.maxHull;
 
         hull +=
             effect.maxHull;
+
     }
 
-    if (effect.maxPressure) {
+    if (
+        effect.maxPressure
+    ) {
 
         maxPressure +=
             effect.maxPressure;
+
     }
+
 }
 
 
@@ -1432,7 +1647,10 @@ function render() {
 
     setText(
         "hull",
-        Math.max(0, hull)
+        Math.max(
+            0,
+            hull
+        )
     );
 
     setText(
@@ -1475,12 +1693,14 @@ function render() {
             "enemy-armor",
             enemy.armor
         );
+
     }
 
 
     renderHand();
 
     updateActionButtons();
+
 }
 
 
@@ -1491,7 +1711,9 @@ function render() {
 function renderHand() {
 
     const container =
-        getElement("hand");
+        getElement(
+            "hand"
+        );
 
     if (!container) {
         return;
@@ -1499,26 +1721,32 @@ function renderHand() {
 
     container.innerHTML = "";
 
-    hand.forEach(card => {
+    hand.forEach(
+        card => {
 
-        const cardElement =
-            document.createElement("div");
+            const cardElement =
+                document.createElement(
+                    "div"
+                );
 
-        cardElement.className =
-            "card";
+            cardElement.className =
+                "card";
 
-        cardElement.textContent =
-            `${card.rank}${card.suit}`;
+            cardElement.textContent =
+                `${card.rank}${card.suit}`;
 
-        container.appendChild(
-            cardElement
-        );
-    });
+            container.appendChild(
+                cardElement
+            );
+
+        }
+    );
 
     setText(
         "hand-value",
         handValue
     );
+
 }
 
 
@@ -1536,6 +1764,7 @@ function canPlayerAct() {
         );
 
         return false;
+
     }
 
     if (!combatStarted) {
@@ -1546,6 +1775,7 @@ function canPlayerAct() {
         );
 
         return false;
+
     }
 
     if (playerStood) {
@@ -1556,9 +1786,11 @@ function canPlayerAct() {
         );
 
         return false;
+
     }
 
     return true;
+
 }
 
 
@@ -1569,14 +1801,17 @@ function updateActionButtons() {
             ".actions button"
         );
 
-    buttons.forEach(button => {
+    buttons.forEach(
+        button => {
 
-        button.disabled =
-            !gameActive ||
-            !combatStarted ||
-            playerStood;
+            button.disabled =
+                !gameActive ||
+                !combatStarted ||
+                playerStood;
 
-    });
+        }
+    );
+
 }
 
 
@@ -1587,6 +1822,7 @@ function updateActionButtons() {
 function gameOver() {
 
     gameActive = false;
+
     combatStarted = false;
 
     hull = 0;
@@ -1599,6 +1835,7 @@ function gameOver() {
     );
 
     showGameOverScreen();
+
 }
 
 
@@ -1618,7 +1855,9 @@ function showGameOverScreen() {
     }
 
     const overlay =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     overlay.id =
         "game-over-screen";
@@ -1657,11 +1896,13 @@ function showGameOverScreen() {
             </button>
 
         </div>
+
     `;
 
     document.body.appendChild(
         overlay
     );
+
 }
 
 
@@ -1680,30 +1921,55 @@ function returnToMenu() {
         gameOver.remove();
     }
 
-    hideElement("game-screen");
-    showElement("main-menu");
+    hideElement(
+        "game-screen"
+    );
+
+    showElement(
+        "main-menu"
+    );
 
     gameActive = false;
+
     combatStarted = false;
 
     cycle = 1;
+
     cogs = 0;
 
     maxHull = 100;
+
     hull = 100;
 
     pressure = 0;
+
     maxPressure = 100;
 
     hand = [];
+
+    handValue = 0;
+
+    aceCount = 0;
+
+    blackjack = false;
+
+    bust = false;
+
+    playerStood = false;
+
+    doubleUsed = false;
+
     enemy = null;
 
     equippedEchoes = [];
+
+    shopEchoes = [];
 
     showMessage(
         "System ready.",
         COLORS.SYSTEM
     );
+
 }
 
 
@@ -1715,10 +1981,17 @@ document.addEventListener(
     "DOMContentLoaded",
     function () {
 
-        hideElement("game-screen");
-        hideElement("workshop");
+        hideElement(
+            "game-screen"
+        );
 
-        showElement("main-menu");
+        hideElement(
+            "workshop"
+        );
+
+        showElement(
+            "main-menu"
+        );
 
         console.log(
             "CORVALI'S ECHOES initialized."
