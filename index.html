@@ -2,12 +2,12 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <title>CORVALI'S ECHOES</title>
 
-    <meta name="theme-color" content="#d6c6b4">
-    <meta name="description" content="CORVALI'S ECHOES - Steampunk Blackjack Roguelike">
+    <meta name="theme-color" content="#b88932">
+    <meta name="description" content="A steampunk Blackjack roguelike.">
 
     <link rel="manifest" href="./manifest.json">
     <link rel="stylesheet" href="./style.css">
@@ -15,128 +15,162 @@
 
 <body>
 
-    <!-- =========================
-         MENU PRINCIPALE
-    ========================== -->
+<div id="app">
 
-    <main id="main-menu" class="screen">
+    <!-- MENU -->
+    <section id="startOverlay" class="screen menu-screen">
+        <div class="menu-frame">
 
-        <div class="title-container">
+            <div class="eyebrow">CORVALI ENGINE // SYSTEM 01</div>
 
-            <div class="title-decoration">
-                ⚙
-            </div>
-
-            <h1>CORVALI'S ECHOES</h1>
+            <h1>CORVALI'S<br>ECHOES</h1>
 
             <p class="subtitle">
-                A STEAM-DRIVEN DESCENT
+                A STEAMPUNK BLACKJACK ROGUELIKE
             </p>
 
-        </div>
+            <div class="menu-divider"></div>
 
-        <div class="menu-container">
-
-            <button
-                class="menu-button player-action"
-                onclick="startNewRun()"
-            >
+            <button class="main-button" onclick="startNewRun()">
                 DISCENDI NELL'ABISSO
-                <span>(inizia una nuova spedizione)</span>
             </button>
 
-        </div>
-
-        <div class="menu-footer">
-            <span>CORVALI INDUSTRIAL SYSTEM</span>
-            <span>•</span>
-            <span>PROTOTYPE 01</span>
-        </div>
-
-    </main>
-
-
-    <!-- =========================
-         GIOCO
-    ========================== -->
-
-    <main id="game-screen" class="screen hidden">
-
-        <header class="game-header">
-
-            <div class="game-title">
-                CORVALI'S ECHOES
+            <div class="menu-footer">
+                THE MACHINE REMEMBERS.
             </div>
 
-            <div class="cycle-info">
-                CYCLE <span id="cycle">1</span>
+        </div>
+    </section>
+
+
+    <!-- GAME -->
+    <main id="gameScreen" class="game-screen">
+
+        <header class="topbar">
+
+            <div>
+                <div class="game-title">CORVALI'S ECHOES</div>
+                <div class="game-subtitle">ENGINE // ACTIVE</div>
+            </div>
+
+            <div class="top-stats">
+                <div>
+                    <span>CYCLE</span>
+                    <strong id="cycle">1</strong>
+                </div>
+
+                <div>
+                    <span>COGS</span>
+                    <strong id="cogs">0</strong>
+                </div>
             </div>
 
         </header>
 
 
-        <!-- STATO DEL GIOCATORE -->
+        <!-- PLAYER STATUS -->
+        <section class="panel player-panel">
 
-        <section class="player-status">
-
-            <div class="status-box player-text">
-                <strong>HULL</strong>
-                <span>(integrità dello scafo)</span>
-
-                <div>
-                    <span id="hull">100</span> /
-                    <span id="max-hull">100</span>
-                </div>
+            <div class="panel-title purple">
+                CORVALI
             </div>
 
-            <div class="status-box player-text">
-                <strong>PRESSURE</strong>
-                <span>(pressione della caldaia)</span>
+            <div class="stats-grid">
 
-                <div>
-                    <span id="pressure">0</span> /
-                    <span id="max-pressure">100</span>
+                <div class="stat">
+                    <span>HULL</span>
+                    <small>integrità dello scafo</small>
+                    <strong>
+                        <span id="hull">100</span>/<span id="maxHull">100</span>
+                    </strong>
                 </div>
-            </div>
 
-            <div class="status-box player-text">
-                <strong>COGS</strong>
-                <span>(ingranaggi raccolti)</span>
+                <div class="stat">
+                    <span>PRESSURE</span>
+                    <small>pressione del sistema</small>
+                    <strong>
+                        <span id="pressure">0</span>/<span id="maxPressure">100</span>
+                    </strong>
 
-                <div id="cogs">0</div>
+                    <div class="bar">
+                        <div id="pressureBar" class="bar-fill pressure-fill"></div>
+                    </div>
+                </div>
+
+                <div class="stat">
+                    <span>BASE TORQUE</span>
+                    <small>potenza meccanica</small>
+                    <strong id="baseTorque">0</strong>
+                </div>
+
+                <div class="stat">
+                    <span>CLOCK POWER</span>
+                    <small>potenza temporale</small>
+                    <strong id="clockPower">0</strong>
+                </div>
+
             </div>
 
         </section>
 
 
-        <!-- NEMICO -->
+        <!-- EQUIPPED ECHOES -->
+        <section class="panel echoes-panel">
 
-        <section class="enemy-panel enemy-text">
+            <div class="section-heading">
+                <div>
+                    <div class="panel-title purple">EQUIPPED ECHOES</div>
+                    <div class="section-description">
+                        MAXIMUM 3 — REPLACEABLE
+                    </div>
+                </div>
 
-            <div class="panel-label">
-                CURRENT ADVERSARY
+                <div class="echo-counter">
+                    <span id="echoCount">0</span>/3
+                </div>
             </div>
 
-            <h2 id="enemy-name">
-                BRASS SENTINEL
-            </h2>
+            <div id="equippedEchoes" class="echo-slots"></div>
 
-            <p id="enemy-description">
-                (nemico corazzato)
-            </p>
+        </section>
+
+
+        <!-- ENEMY -->
+        <section class="panel enemy-panel">
+
+            <div class="enemy-header">
+
+                <div>
+                    <div id="enemyTier" class="enemy-tier">TIER I</div>
+                    <h2 id="enemyName">BRASS SENTINEL</h2>
+                </div>
+
+                <div class="enemy-hull-value">
+                    <span id="enemyHull">50</span> /
+                    <span id="enemyMaxHull">50</span>
+                </div>
+
+            </div>
+
+            <div class="bar enemy-bar">
+                <div id="enemyHullBar" class="bar-fill enemy-fill"></div>
+            </div>
 
             <div class="enemy-stats">
 
                 <div>
-                    HULL
-                    <span>(integrità)</span>
-                    <strong id="enemy-hull">30</strong>
+                    <span>ATTACK</span>
+                    <strong id="enemyAttack">10</strong>
                 </div>
 
                 <div>
-                    ARMOR
-                    <span>(corazza)</span>
-                    <strong id="enemy-armor">2</strong>
+                    <span>ARMOR</span>
+                    <strong id="enemyArmor">4</strong>
+                </div>
+
+                <div>
+                    <span>ABILITY</span>
+                    <strong id="enemyAbility">ARMOR</strong>
                 </div>
 
             </div>
@@ -144,87 +178,50 @@
         </section>
 
 
-        <!-- MANO -->
+        <!-- HAND -->
+        <section class="panel hand-panel">
 
-        <section class="hand-panel">
+            <div class="hand-heading">
+                <div class="panel-title">YOUR HAND</div>
 
-            <div class="panel-label player-text">
-                YOUR HAND
-                <span>(le tue carte)</span>
+                <div class="hand-value">
+                    <span>VALUE</span>
+                    <strong id="handValue">0</strong>
+                </div>
             </div>
 
-            <div id="hand" class="cards">
-                <!-- carte generate da game.js -->
-            </div>
-
-            <div class="hand-value player-text">
-                VALUE:
-                <strong id="hand-value">0</strong>
-            </div>
+            <div id="cards" class="cards"></div>
 
         </section>
 
 
-        <!-- MESSAGGI -->
+        <!-- MESSAGE LOG -->
+        <section class="panel log-panel">
 
-        <section class="message-panel">
+            <div class="panel-title">ENGINE LOG</div>
 
-            <div id="message" class="system-text">
-                System ready.
-            </div>
+            <div id="log" class="log"></div>
 
         </section>
 
 
-        <!-- AZIONI -->
-
+        <!-- ACTIONS -->
         <section class="actions">
 
-            <button
-                class="game-button player-action"
-                onclick="hit()"
-            >
+            <button id="hitButton" onclick="hit()">
                 HIT
-                <span>(pesca una carta)</span>
             </button>
 
-            <button
-                class="game-button player-action"
-                onclick="stand()"
-            >
+            <button id="standButton" onclick="stand()">
                 STAND
-                <span>(ferma la mano)</span>
             </button>
 
-            <button
-                class="game-button player-action"
-                onclick="doubleDown()"
-            >
+            <button id="doubleButton" onclick="doubleDown()">
                 DOUBLE
-                <span>(raddoppia la posta)</span>
             </button>
 
-            <button
-                class="game-button player-action"
-                onclick="vent()"
-            >
+            <button id="ventButton" onclick="vent()">
                 VENT
-                <span>(riduci la pressione)</span>
-            </button>
-
-        </section>
-
-
-        <!-- OFFICINA -->
-
-        <section class="workshop-area">
-
-            <button
-                class="secondary-button player-action"
-                onclick="openWorkshop()"
-            >
-                WORKSHOP
-                <span>(gestisci gli Echoes)</span>
             </button>
 
         </section>
@@ -232,61 +229,123 @@
     </main>
 
 
-    <!-- =========================
-         WORKSHOP
-    ========================== -->
+    <!-- LOOT MODAL -->
+    <div id="lootModal" class="modal hidden">
 
-    <div id="workshop" class="modal hidden">
+        <div class="modal-card loot-card">
 
-        <div class="modal-content">
+            <div class="modal-eyebrow">
+                ENCOUNTER RESOLVED
+            </div>
 
-            <button
-                class="close-button"
-                onclick="closeWorkshop()"
-            >
-                ×
-            </button>
+            <div class="loot-icon">✦</div>
 
-            <h2 class="player-text">
-                WORKSHOP
+            <h2 id="lootEnemyName">
+                ENEMY DESTROYED
             </h2>
 
-            <p class="player-text">
-                (officina: modifica la tua macchina)
+            <p class="loot-message">
+                THE MACHINE HAS BEEN SILENCED.
             </p>
 
-            <div id="shop">
-                <!-- generato da game.js -->
+            <div class="loot-reward">
+                <span>LOOT</span>
+                <strong id="lootReward">+0 COGS</strong>
             </div>
+
+            <button class="main-button" onclick="continueAfterLoot()">
+                CONTINUE
+            </button>
 
         </div>
 
     </div>
 
 
-    <script src="./game.js"></script>
+    <!-- WORKSHOP -->
+    <div id="workshopModal" class="modal hidden">
 
-    <script>
-        if ("serviceWorker" in navigator) {
-            window.addEventListener("load", function () {
+        <div class="modal-card workshop-card">
 
-                navigator.serviceWorker
-                    .register("./sw.js")
-                    .then(function () {
-                        console.log(
-                            "CORVALI'S ECHOES: Service Worker active."
-                        );
-                    })
-                    .catch(function (error) {
-                        console.error(
-                            "CORVALI'S ECHOES: Service Worker error.",
-                            error
-                        );
-                    });
+            <div class="modal-eyebrow">
+                CORVALI WORKSHOP
+            </div>
 
-            });
-        }
-    </script>
+            <h2>SELECT AN ECHO</h2>
+
+            <p class="workshop-description">
+                CHOOSE AN ECHO TO MODIFY THE ENGINE.
+                MAXIMUM 3 EQUIPPED.
+            </p>
+
+            <div id="shopItems" class="shop-items"></div>
+
+            <div id="replacementPanel" class="replacement-panel hidden">
+
+                <div class="replacement-title">
+                    REPLACE AN EQUIPPED ECHO
+                </div>
+
+                <div id="replacementSlots" class="replacement-slots"></div>
+
+                <button
+                    class="secondary-button"
+                    onclick="cancelReplacement()">
+                    CANCEL
+                </button>
+
+            </div>
+
+            <button
+                id="workshopContinueButton"
+                class="main-button workshop-continue"
+                onclick="continueAfterWorkshop()">
+                CONTINUE
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- GAME OVER -->
+    <div id="gameOverModal" class="modal hidden">
+
+        <div class="modal-card gameover-card">
+
+            <div class="modal-eyebrow">
+                SYSTEM FAILURE
+            </div>
+
+            <h2>ENGINE SILENCED</h2>
+
+            <div class="final-stats">
+
+                <div>
+                    <span>FINAL CYCLE</span>
+                    <strong id="finalCycle">1</strong>
+                </div>
+
+                <div>
+                    <span>COGS</span>
+                    <strong id="finalCogs">0</strong>
+                </div>
+
+            </div>
+
+            <button class="main-button" onclick="returnToMenu()">
+                RETURN TO MENU
+            </button>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<script src="./game.js"></script>
 
 </body>
 </html>
