@@ -1,42 +1,30 @@
-/* =========================================================
-   CORVALI'S ECHOES
-   VISUAL SYSTEM
-========================================================= */
-
 :root {
-
-    /* Sfondo principale */
     --background: #d6c6b4;
-
-    /* Superfici */
     --surface: #c8b5a0;
-    --surface-dark: #b49e87;
+    --surface-dark: #b29c84;
 
-    /* Bordo */
-    --border: #4a3b30;
-
-    /* Testo */
+    --border: #3a3028;
     --black: #17130f;
 
-    /* Giocatore */
     --purple: #5b2c83;
     --purple-dark: #3e1d5c;
+    --purple-light: #76509b;
 
-    /* Nemico */
     --red: #8b1e1e;
     --red-dark: #5f1111;
+    --red-light: #a93a3a;
 
-    /* Metallo */
     --brass: #8a682e;
+    --brass-light: #b18b4a;
 
-    /* Ombra */
-    --shadow: rgba(40, 28, 20, 0.25);
+    --white: #f4eee7;
+
+    --shadow: rgba(45, 32, 22, 0.28);
 }
-
 
 /* =========================================================
    RESET
-========================================================= */
+   ========================================================= */
 
 * {
     box-sizing: border-box;
@@ -50,9 +38,7 @@ body {
 }
 
 body {
-
     background: var(--background);
-
     color: var(--black);
 
     font-family:
@@ -60,787 +46,955 @@ body {
         "Times New Roman",
         serif;
 
-    min-height: 100vh;
-
-    letter-spacing: 0.03em;
+    font-size: 16px;
+    line-height: 1.4;
 }
-
-
-/* =========================================================
-   GENERALE
-========================================================= */
 
 button {
-    font-family: inherit;
+    font: inherit;
 }
+
+button:focus-visible {
+    outline: 3px solid var(--brass-light);
+    outline-offset: 3px;
+}
+
+/* =========================================================
+   APP
+   ========================================================= */
+
+#app {
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* =========================================================
+   MENU PRINCIPALE
+   ========================================================= */
+
+#menu {
+    min-height: 100vh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 30px;
+}
+
+.menu-container {
+    width: 100%;
+    max-width: 650px;
+
+    text-align: center;
+
+    padding: 60px 35px;
+
+    border: 3px solid var(--border);
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.12),
+            rgba(0, 0, 0, 0.04)
+        ),
+        var(--surface);
+
+    box-shadow:
+        10px 10px 0 rgba(58, 48, 40, 0.15),
+        0 20px 40px var(--shadow);
+}
+
+.menu-title {
+    margin: 0;
+
+    color: var(--black);
+
+    font-size: clamp(42px, 8vw, 76px);
+    line-height: 0.95;
+
+    letter-spacing: 5px;
+    text-transform: uppercase;
+
+    text-shadow:
+        2px 2px 0 rgba(255, 255, 255, 0.18);
+}
+
+.menu-subtitle {
+    margin: 22px 0 45px;
+
+    color: var(--black);
+
+    font-size: 16px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+
+    opacity: 0.75;
+}
+
+.menu-button {
+    display: inline-block;
+
+    min-width: 280px;
+
+    padding: 16px 28px;
+
+    border: 2px solid var(--purple-dark);
+
+    background: var(--purple);
+    color: var(--white);
+
+    cursor: pointer;
+
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+
+    box-shadow:
+        5px 5px 0 var(--purple-dark);
+
+    transition:
+        transform 0.12s ease,
+        box-shadow 0.12s ease,
+        background 0.12s ease;
+}
+
+.menu-button:hover {
+    background: var(--purple-light);
+
+    transform: translate(-2px, -2px);
+
+    box-shadow:
+        7px 7px 0 var(--purple-dark);
+}
+
+.menu-button:active {
+    transform: translate(3px, 3px);
+
+    box-shadow:
+        2px 2px 0 var(--purple-dark);
+}
+
+/* =========================================================
+   GAME
+   ========================================================= */
+
+#game {
+    width: 100%;
+    min-height: 100vh;
+
+    padding: 20px;
+}
+
+.game-container {
+    width: 100%;
+    max-width: 1100px;
+
+    margin: 0 auto;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 15px;
+
+    margin-bottom: 18px;
+
+    padding: 16px 20px;
+
+    border: 2px solid var(--border);
+
+    background: var(--surface);
+
+    box-shadow: 5px 5px 0 rgba(58, 48, 40, 0.14);
+}
+
+.game-title {
+    margin: 0;
+
+    color: var(--black);
+
+    font-size: 25px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.cycle {
+    color: var(--black);
+
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* =========================================================
+   STATUS GIOCATORE
+   ========================================================= */
+
+.player-status {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 10px;
+
+    margin-bottom: 18px;
+}
+
+.status-box {
+    min-height: 70px;
+
+    padding: 12px;
+
+    border: 2px solid var(--border);
+
+    background: var(--surface);
+
+    text-align: center;
+}
+
+.status-label {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: var(--black);
+
+    font-size: 12px;
+    font-weight: bold;
+
+    letter-spacing: 1px;
+    text-transform: uppercase;
+
+    opacity: 0.8;
+}
+
+.status-value {
+    display: block;
+
+    color: var(--black);
+
+    font-size: 22px;
+    font-weight: bold;
+}
+
+/* =========================================================
+   SCHEDE COLORATE
+   ========================================================= */
+
+/* Tutto ciò che appartiene al giocatore */
+
+.player,
+.player-text,
+.player-value,
+.player-panel {
+    color: var(--purple);
+}
+
+/* Tutto ciò che appartiene al nemico */
+
+.enemy,
+.enemy-text,
+.enemy-value,
+.enemy-panel {
+    color: var(--red);
+}
+
+/* Informazioni di sistema */
+
+.system,
+.system-text {
+    color: var(--black);
+}
+
+/* =========================================================
+   NEMICO
+   ========================================================= */
+
+.enemy-panel {
+    margin-bottom: 18px;
+
+    padding: 22px;
+
+    border: 3px solid var(--red-dark);
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(139, 30, 30, 0.08),
+            rgba(0, 0, 0, 0.02)
+        ),
+        var(--surface);
+
+    box-shadow:
+        6px 6px 0 rgba(95, 17, 17, 0.18);
+}
+
+.enemy-title {
+    margin: 0 0 12px;
+
+    color: var(--red);
+
+    font-size: 25px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.enemy-description {
+    margin: 0 0 18px;
+
+    color: var(--black);
+
+    font-size: 14px;
+}
+
+.enemy-stats {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 10px;
+}
+
+.enemy-stat {
+    padding: 10px;
+
+    border: 1px solid var(--red);
+
+    background: rgba(139, 30, 30, 0.06);
+
+    text-align: center;
+}
+
+.enemy-stat-label {
+    display: block;
+
+    color: var(--red);
+
+    font-size: 11px;
+    font-weight: bold;
+
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.enemy-stat-value {
+    display: block;
+
+    margin-top: 3px;
+
+    color: var(--red);
+
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* =========================================================
+   MANO / BLACKJACK
+   ========================================================= */
+
+.hand-panel {
+    margin-bottom: 18px;
+
+    padding: 22px;
+
+    border: 2px solid var(--border);
+
+    background: var(--surface);
+
+    box-shadow: 5px 5px 0 rgba(58, 48, 40, 0.12);
+}
+
+.hand-title {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 15px;
+}
+
+.hand-title h2 {
+    margin: 0;
+
+    color: var(--purple);
+
+    font-size: 22px;
+
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.hand-value {
+    color: var(--purple);
+
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.cards {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 10px;
+
+    min-height: 110px;
+}
+
+/* =========================================================
+   CARTE
+   ========================================================= */
+
+.card {
+    width: 76px;
+    height: 105px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    border: 2px solid var(--border);
+
+    background: var(--white);
+
+    color: var(--black);
+
+    box-shadow: 3px 3px 0 rgba(58, 48, 40, 0.18);
+
+    user-select: none;
+}
+
+.card-rank {
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.card-suit {
+    margin-top: 3px;
+
+    font-size: 22px;
+}
+
+/* =========================================================
+   MESSAGGI
+   ========================================================= */
+
+.message-panel {
+    margin-bottom: 18px;
+
+    min-height: 70px;
+
+    padding: 16px 20px;
+
+    border: 2px solid var(--border);
+
+    background: var(--surface);
+
+    text-align: center;
+}
+
+#message {
+    margin: 0;
+
+    color: var(--black);
+
+    font-size: 17px;
+    font-weight: bold;
+}
+
+/* =========================================================
+   AZIONI
+   ========================================================= */
+
+.actions {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 10px;
+
+    margin-bottom: 18px;
+}
+
+.action-button {
+    min-height: 55px;
+
+    border: 2px solid var(--purple-dark);
+
+    background: var(--purple);
+    color: var(--white);
+
+    cursor: pointer;
+
+    font-weight: bold;
+
+    letter-spacing: 1px;
+    text-transform: uppercase;
+
+    box-shadow:
+        4px 4px 0 var(--purple-dark);
+
+    transition:
+        transform 0.1s ease,
+        box-shadow 0.1s ease,
+        background 0.1s ease;
+}
+
+.action-button:hover:not(:disabled) {
+    background: var(--purple-light);
+
+    transform: translate(-1px, -1px);
+
+    box-shadow:
+        5px 5px 0 var(--purple-dark);
+}
+
+.action-button:active:not(:disabled) {
+    transform: translate(3px, 3px);
+
+    box-shadow:
+        1px 1px 0 var(--purple-dark);
+}
+
+.action-button:disabled {
+    background: var(--surface-dark);
+
+    border-color: #776858;
+
+    color: #4f453c;
+
+    cursor: not-allowed;
+
+    box-shadow: none;
+}
+
+.action-button.vent {
+    border-color: var(--border);
+
+    background: var(--surface-dark);
+
+    color: var(--black);
+
+    box-shadow:
+        4px 4px 0 var(--border);
+}
+
+.action-button.vent:hover:not(:disabled) {
+    background: #c2ad95;
+}
+
+/* =========================================================
+   WORKSHOP
+   ========================================================= */
+
+.workshop {
+    margin-top: 20px;
+
+    padding: 20px;
+
+    border: 2px solid var(--border);
+
+    background: var(--surface);
+
+    box-shadow: 5px 5px 0 rgba(58, 48, 40, 0.12);
+}
+
+.workshop-title {
+    margin: 0 0 18px;
+
+    color: var(--black);
+
+    font-size: 24px;
+
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.equipped-echoes {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 10px;
+
+    margin-bottom: 20px;
+}
+
+.echo-slot {
+    min-height: 90px;
+
+    padding: 12px;
+
+    border: 2px dashed var(--purple);
+
+    background: rgba(91, 44, 131, 0.06);
+}
+
+.echo-slot-title {
+    margin-bottom: 5px;
+
+    color: var(--purple);
+
+    font-size: 11px;
+    font-weight: bold;
+
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.echo-slot-name {
+    color: var(--purple);
+
+    font-weight: bold;
+}
+
+/* =========================================================
+   ECHO CARDS
+   ========================================================= */
+
+.echo-shop {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 12px;
+}
+
+.echo-card {
+    padding: 16px;
+
+    border: 2px solid var(--purple-dark);
+
+    background: rgba(91, 44, 131, 0.06);
+
+    color: var(--purple);
+
+    box-shadow:
+        3px 3px 0 rgba(62, 29, 92, 0.18);
+}
+
+.echo-card h3 {
+    margin: 0 0 8px;
+
+    color: var(--purple);
+
+    font-size: 18px;
+
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.echo-card p {
+    margin: 5px 0;
+
+    color: var(--black);
+
+    font-size: 14px;
+}
+
+.echo-card button {
+    width: 100%;
+
+    margin-top: 12px;
+
+    padding: 10px;
+
+    border: 2px solid var(--purple-dark);
+
+    background: var(--purple);
+    color: var(--white);
+
+    cursor: pointer;
+
+    font-weight: bold;
+}
+
+.echo-card button:hover {
+    background: var(--purple-light);
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.modal {
+    position: fixed;
+
+    inset: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(23, 19, 15, 0.55);
+
+    z-index: 1000;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    width: 100%;
+    max-width: 700px;
+    max-height: 90vh;
+
+    overflow-y: auto;
+
+    padding: 25px;
+
+    border: 3px solid var(--border);
+
+    background: var(--surface);
+
+    box-shadow:
+        10px 10px 0 rgba(23, 19, 15, 0.25);
+}
+
+.modal-title {
+    margin: 0 0 20px;
+
+    color: var(--black);
+
+    font-size: 28px;
+
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.close-button {
+    width: 100%;
+
+    margin-top: 20px;
+
+    padding: 12px;
+
+    border: 2px solid var(--border);
+
+    background: var(--surface-dark);
+    color: var(--black);
+
+    cursor: pointer;
+
+    font-weight: bold;
+}
+
+.close-button:hover {
+    background: #c2ad95;
+}
+
+/* =========================================================
+   UTILITY
+   ========================================================= */
 
 .hidden {
     display: none !important;
 }
 
-.screen {
-    min-height: 100vh;
-    width: 100%;
-
-    padding: 30px 20px;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-
-/* =========================================================
-   COLORI FUNZIONALI
-========================================================= */
-
-.system-text {
+.text-black {
     color: var(--black);
 }
 
-.player-text,
-.player-action {
+.text-purple {
     color: var(--purple);
 }
 
-.enemy-text {
+.text-red {
     color: var(--red);
 }
 
+.text-brass {
+    color: var(--brass);
+}
 
 /* =========================================================
-   MENU PRINCIPALE
-========================================================= */
+   BARRE DI STATO
+   ========================================================= */
 
-#main-menu {
-
-    justify-content: center;
-
-    text-align: center;
-
-    position: relative;
-
-    overflow: hidden;
-}
-
-
-/* titolo */
-
-.title-container {
-
-    margin-bottom: 70px;
-
-    animation: titleAppear 1.2s ease-out;
-}
-
-
-.title-decoration {
-
-    font-size: 42px;
-
-    color: var(--brass);
-
-    margin-bottom: 15px;
-}
-
-
-.title-container h1 {
-
-    margin: 0;
-
-    font-size: clamp(42px, 8vw, 78px);
-
-    font-weight: normal;
-
-    letter-spacing: 0.12em;
-
-    color: var(--black);
-
-    text-shadow:
-        2px 2px 0 rgba(255,255,255,0.25),
-        4px 4px 0 rgba(70,50,35,0.12);
-}
-
-
-.subtitle {
-
-    margin-top: 18px;
-
-    font-size: 14px;
-
-    letter-spacing: 0.35em;
-
-    color: var(--black);
-
-    opacity: 0.7;
-}
-
-
-/* menu */
-
-.menu-container {
-
-    width: min(520px, 90%);
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 18px;
-}
-
-
-.menu-button {
-
+.progress {
     width: 100%;
-
-    padding: 20px 25px;
-
-    background: transparent;
-
-    border: 2px solid var(--purple);
-
-    color: var(--purple);
-
-    cursor: pointer;
-
-    font-size: 19px;
-
-    letter-spacing: 0.08em;
-
-    transition:
-        background 0.2s ease,
-        color 0.2s ease,
-        transform 0.2s ease;
-}
-
-
-.menu-button span,
-.game-button span,
-.secondary-button span {
-
-    display: block;
+    height: 12px;
 
     margin-top: 7px;
 
-    font-size: 12px;
-
-    letter-spacing: 0.04em;
-
-    opacity: 0.65;
-}
-
-
-.menu-button:hover {
-
-    background: var(--purple);
-
-    color: var(--background);
-
-    transform: translateY(-2px);
-}
-
-
-.menu-footer {
-
-    position: absolute;
-
-    bottom: 25px;
-
-    display: flex;
-
-    gap: 12px;
-
-    font-size: 10px;
-
-    letter-spacing: 0.15em;
-
-    opacity: 0.45;
-}
-
-
-/* =========================================================
-   GAME HEADER
-========================================================= */
-
-#game-screen {
-
-    max-width: 1100px;
-
-    margin: auto;
-
-    gap: 20px;
-}
-
-
-.game-header {
-
-    width: 100%;
-
-    display: flex;
-
-    justify-content: space-between;
-
-    align-items: center;
-
-    border-bottom: 2px solid var(--border);
-
-    padding-bottom: 15px;
-}
-
-
-.game-title {
-
-    font-size: 22px;
-
-    letter-spacing: 0.12em;
-
-    color: var(--black);
-}
-
-
-.cycle-info {
-
-    color: var(--black);
-
-    font-size: 14px;
-
-    letter-spacing: 0.12em;
-}
-
-
-/* =========================================================
-   PLAYER STATUS
-========================================================= */
-
-.player-status {
-
-    width: 100%;
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-    gap: 12px;
-}
-
-
-.status-box {
-
-    border: 1px solid var(--purple);
-
-    padding: 14px;
-
-    text-align: center;
-
-    background: rgba(255,255,255,0.08);
-}
-
-
-.status-box strong {
-
-    display: block;
-
-    font-size: 15px;
-
-    letter-spacing: 0.12em;
-}
-
-
-.status-box > span {
-
-    display: block;
-
-    font-size: 10px;
-
-    margin-top: 4px;
-
-    opacity: 0.7;
-}
-
-
-.status-box div {
-
-    margin-top: 8px;
-
-    font-size: 20px;
-}
-
-
-/* =========================================================
-   ENEMY
-========================================================= */
-
-.enemy-panel {
-
-    width: 100%;
-
-    border: 2px solid var(--red);
-
-    padding: 22px;
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(139,30,30,0.04),
-            transparent
-        );
-}
-
-
-.panel-label {
-
-    font-size: 11px;
-
-    letter-spacing: 0.18em;
-
-    opacity: 0.7;
-
-    margin-bottom: 8px;
-}
-
-
-.enemy-panel h2 {
-
-    margin: 0;
-
-    font-size: 29px;
-
-    font-weight: normal;
-
-    letter-spacing: 0.08em;
-}
-
-
-.enemy-panel p {
-
-    margin: 6px 0 20px;
-
-    font-size: 13px;
-
-    opacity: 0.7;
-}
-
-
-.enemy-stats {
-
-    display: flex;
-
-    gap: 40px;
-}
-
-
-.enemy-stats div {
-
-    font-size: 12px;
-
-    letter-spacing: 0.1em;
-}
-
-
-.enemy-stats span {
-
-    display: block;
-
-    font-size: 10px;
-
-    letter-spacing: 0;
-
-    opacity: 0.65;
-}
-
-
-.enemy-stats strong {
-
-    display: block;
-
-    font-size: 20px;
-
-    margin-top: 4px;
-}
-
-
-/* =========================================================
-   MANO
-========================================================= */
-
-.hand-panel {
-
-    width: 100%;
-
-    border-top: 1px solid var(--border);
-
-    border-bottom: 1px solid var(--border);
-
-    padding: 20px 0;
-}
-
-
-.cards {
-
-    display: flex;
-
-    flex-wrap: wrap;
-
-    justify-content: center;
-
-    gap: 12px;
-
-    min-height: 100px;
-
-    margin: 18px 0;
-}
-
-
-/* carte */
-
-.card {
-
-    width: 65px;
-
-    height: 90px;
-
-    border: 2px solid var(--border);
-
-    background: #e2d5c7;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    font-size: 22px;
-
-    color: var(--black);
-
-    box-shadow:
-        2px 3px 0 var(--shadow);
-}
-
-
-.hand-value {
-
-    text-align: center;
-
-    font-size: 13px;
-
-    letter-spacing: 0.1em;
-}
-
-
-.hand-value strong {
-
-    font-size: 22px;
-
-    margin-left: 5px;
-}
-
-
-/* =========================================================
-   MESSAGGI
-========================================================= */
-
-.message-panel {
-
-    width: 100%;
-
-    min-height: 60px;
-
-    padding: 15px;
-
-    border-left: 3px solid var(--black);
-
-    background: rgba(0,0,0,0.04);
-}
-
-
-#message {
-
-    font-size: 14px;
-
-    line-height: 1.5;
-}
-
-
-/* =========================================================
-   AZIONI
-========================================================= */
-
-.actions {
-
-    width: 100%;
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(4, 1fr);
-
-    gap: 10px;
-}
-
-
-.game-button {
-
-    min-height: 70px;
-
-    background: transparent;
-
-    border: 1px solid var(--purple);
-
-    cursor: pointer;
-
-    font-size: 15px;
-
-    letter-spacing: 0.08em;
-
-    transition:
-        background 0.2s ease,
-        color 0.2s ease,
-        transform 0.2s ease;
-}
-
-
-.game-button:hover {
-
-    background: var(--purple);
-
-    color: var(--background);
-
-    transform: translateY(-2px);
-}
-
-
-/* =========================================================
-   WORKSHOP
-========================================================= */
-
-.workshop-area {
-
-    width: 100%;
-
-    display: flex;
-
-    justify-content: center;
-
-    margin-top: 5px;
-}
-
-
-.secondary-button {
-
-    background: transparent;
+    overflow: hidden;
 
     border: 1px solid var(--border);
 
-    color: var(--black);
-
-    padding: 12px 30px;
-
-    cursor: pointer;
-
-    font-size: 13px;
-
-    letter-spacing: 0.1em;
+    background: rgba(0, 0, 0, 0.12);
 }
 
+.progress-bar {
+    height: 100%;
 
-.secondary-button:hover {
+    width: 0;
 
-    background: var(--border);
-
-    color: var(--background);
+    transition: width 0.2s ease;
 }
 
+.hull-bar {
+    background: var(--purple);
+}
+
+.pressure-bar {
+    background: var(--red);
+}
 
 /* =========================================================
-   MODAL
-========================================================= */
+   RESPONSIVE
+   ========================================================= */
 
-.modal {
+@media (max-width: 800px) {
 
-    position: fixed;
-
-    inset: 0;
-
-    background: rgba(35, 25, 18, 0.65);
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 20px;
-
-    z-index: 100;
-}
-
-
-.modal-content {
-
-    position: relative;
-
-    width: min(700px, 95vw);
-
-    max-height: 90vh;
-
-    overflow-y: auto;
-
-    padding: 30px;
-
-    background: var(--background);
-
-    border: 2px solid var(--border);
-}
-
-
-.modal-content h2 {
-
-    margin-top: 0;
-
-    font-size: 30px;
-}
-
-
-.close-button {
-
-    position: absolute;
-
-    right: 15px;
-
-    top: 10px;
-
-    border: none;
-
-    background: transparent;
-
-    font-size: 30px;
-
-    color: var(--black);
-
-    cursor: pointer;
-}
-
-
-/* =========================================================
-   ANIMAZIONI
-========================================================= */
-
-@keyframes titleAppear {
-
-    from {
-
-        opacity: 0;
-
-        transform:
-            translateY(15px);
+    #game {
+        padding: 12px;
     }
 
-    to {
+    .game-header {
+        flex-direction: column;
 
-        opacity: 1;
-
-        transform:
-            translateY(0);
+        align-items: flex-start;
     }
-}
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
-@media (max-width: 700px) {
-
-    .screen {
-
-        padding:
-            20px 14px;
-    }
-
-
-    .title-container {
-
-        margin-bottom: 50px;
-    }
-
-
-    .title-container h1 {
-
-        font-size: 38px;
-
-        letter-spacing: 0.07em;
-    }
-
-
-    .subtitle {
-
-        font-size: 10px;
-
-        letter-spacing: 0.2em;
-    }
-
 
     .player-status {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
 
+    .enemy-stats {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+    }
+
+    .actions {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .equipped-echoes {
         grid-template-columns:
             1fr;
     }
 
-
-    .actions {
-
+    .echo-shop {
         grid-template-columns:
-            1fr 1fr;
+            1fr;
+    }
+}
+
+@media (max-width: 520px) {
+
+    body {
+        font-size: 14px;
     }
 
-
-    .enemy-panel {
-
-        padding: 17px;
+    #menu {
+        padding: 15px;
     }
 
+    .menu-container {
+        padding: 45px 20px;
+    }
 
-    .enemy-panel h2 {
+    .menu-title {
+        font-size: 40px;
 
+        letter-spacing: 3px;
+    }
+
+    .menu-button {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .player-status {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 7px;
+    }
+
+    .status-box {
+        min-height: 62px;
+
+        padding: 8px;
+    }
+
+    .status-value {
+        font-size: 18px;
+    }
+
+    .enemy-panel,
+    .hand-panel,
+    .workshop {
+        padding: 15px;
+    }
+
+    .enemy-stats {
+        grid-template-columns:
+            1fr;
+    }
+
+    .cards {
+        justify-content: center;
+    }
+
+    .card {
+        width: 62px;
+        height: 88px;
+    }
+
+    .card-rank {
         font-size: 23px;
     }
 
-
-    .game-title {
-
-        font-size: 17px;
+    .card-suit {
+        font-size: 18px;
     }
-
-
-    .cycle-info {
-
-        font-size: 11px;
-    }
-
-}
-
-
-@media (max-width: 420px) {
 
     .actions {
-
         grid-template-columns:
-            1fr;
+            1fr 1fr;
+
+        gap: 8px;
     }
 
+    .action-button {
+        min-height: 52px;
 
-    .game-button {
+        font-size: 13px;
+    }
+}
 
-        min-height: 62px;
+/* =========================================================
+   DESKTOP GRANDE
+   ========================================================= */
+
+@media (min-width: 1200px) {
+
+    #game {
+        padding: 30px;
     }
 
-
-    .menu-button {
-
-        font-size: 16px;
+    .game-container {
+        max-width: 1150px;
     }
-
 }
