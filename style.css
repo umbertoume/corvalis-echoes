@@ -849,3 +849,72 @@ button:focus-visible {
         height: 82px;
     }
 }
+
+
+/* =========================
+   DUEL: ENEMY HAND + RESULT
+   ========================= */
+
+.enemy-hand {
+    margin-top: 14px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+}
+
+.enemy-hand-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+}
+
+.enemy-hand-heading strong {
+    font-size: 22px;
+    letter-spacing: 0;
+    color: var(--red);
+}
+
+.enemy-cards {
+    min-height: 100px;
+    padding: 10px 0 0;
+}
+
+.enemy-cards .card {
+    width: 56px;
+    height: 78px;
+    padding: 7px;
+}
+
+.enemy-cards .card span {
+    font-size: 18px;
+}
+
+.card.red {
+    color: var(--red);
+}
+
+.card.hidden-card {
+    border-color: var(--gold);
+    background: repeating-linear-gradient(
+        45deg,
+        var(--black),
+        var(--black) 6px,
+        var(--border-dark) 6px,
+        var(--border-dark) 12px
+    );
+}
+
+.round-result {
+    min-height: 20px;
+    margin-top: 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 3px;
+}
+
+.round-result.win  { color: var(--gold); }
+.round-result.lose { color: var(--red); }
+.round-result.push { color: var(--muted); }

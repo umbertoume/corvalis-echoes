@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "corvali-echoes-v2";
+const CACHE_NAME = "corvali-echoes-v3";
 
 const FILES_TO_CACHE = [
     "./",
