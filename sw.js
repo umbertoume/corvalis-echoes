@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "corvali-echoes-v3";
+const CACHE_NAME = "corvali-echoes-v4";
 
 const FILES_TO_CACHE = [
     "./",
@@ -9,85 +9,100 @@ const FILES_TO_CACHE = [
     "./game.js",
     "./manifest.json",
     "./icon-192.png",
-    "./icon-512.png"
+    "./icon-512.png",
+    "./icon-maskable-512.png",
+    "./apple-touch-icon.png"
 ];
 
 
-/* =========================
-   INSTALL
-   ========================= */
+/* INSTALL: cache what exists, never fail because one file is missing */
 
 self.addEventListener("install", function (event) {
 
     event.waitUntil(
 
-        caches.open(CACHE_NAME)
-            .then(function (cache) {
+        caches.open(CACHE_NAME).then(function (cache) {
 
-                return cache.addAll(FILES_TO_CACHE);
-
-            })
-
+            return Promise.all(
+                FILES_TO_CACHE.map(function (url) {
+                    return cache.add(url).catch(function () {
+                        return null;
+                    });
+                })
+            );
+        })
     );
 
     self.skipWaiting();
 });
 
 
-/* =========================
-   ACTIVATE
-   ========================= */
+/* ACTIVATE: remove old caches */
 
 self.addEventListener("activate", function (event) {
 
     event.waitUntil(
 
-        caches.keys()
-            .then(function (cacheNames) {
+        caches.keys().then(function (names) {
 
-                return Promise.all(
-
-                    cacheNames
-                        .filter(function (cacheName) {
-
-                            return cacheName !== CACHE_NAME;
-
-                        })
-                        .map(function (cacheName) {
-
-                            return caches.delete(cacheName);
-
-                        })
-
-                );
-
-            })
-
+            return Promise.all(
+                names
+                    .filter(function (name) {
+                        return name !== CACHE_NAME;
+                    })
+                    .map(function (name) {
+                        return caches.delete(name);
+                    })
+            );
+        })
     );
 
     self.clients.claim();
 });
 
 
-/* =========================
-   FETCH
-   ========================= */
+/* FETCH: network first (updates arrive immediately), cache as offline fallback.
+   Audio is left to the browser: cached responses break Range requests on Safari. */
 
 self.addEventListener("fetch", function (event) {
 
+    const request = event.request;
+
+    if (request.method !== "GET") {
+        return;
+    }
+
+    const url = new URL(request.url);
+
+    if (url.origin !== self.location.origin) {
+        return;
+    }
+
+    if (request.headers.has("range") || /\.(mp3|ogg|wav)$/i.test(url.pathname)) {
+        return;
+    }
+
     event.respondWith(
 
-        caches.match(event.request)
-            .then(function (cachedResponse) {
+        fetch(request)
+            .then(function (response) {
 
-                if (cachedResponse) {
-                    return cachedResponse;
+                if (response && response.status === 200 && response.type === "basic") {
+
+                    const copy = response.clone();
+
+                    caches.open(CACHE_NAME).then(function (cache) {
+                        cache.put(request, copy);
+                    });
                 }
 
-                return fetch(event.request);
-
+                return response;
             })
+            .catch(function () {
 
+                return caches.match(request).then(function (cached) {
+                    return cached || caches.match("./index.html");
+                });
+            })
     );
-
 });

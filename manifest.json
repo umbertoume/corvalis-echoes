@@ -1,23 +1,34 @@
 {
+  "id": "./",
   "name": "CORVALI'S ECHOES",
   "short_name": "CORVALI",
   "description": "A steampunk Blackjack roguelike.",
+  "lang": "en",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#090807",
+  "background_color": "#0c0a08",
   "theme_color": "#b88932",
+  "categories": ["games"],
   "icons": [
     {
       "src": "./icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "./icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

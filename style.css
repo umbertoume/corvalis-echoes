@@ -918,3 +918,392 @@ button:focus-visible {
 .round-result.win  { color: var(--gold); }
 .round-result.lose { color: var(--red); }
 .round-result.push { color: var(--muted); }
+
+
+
+/* =========================
+   MUSIC BUTTON
+   ========================= */
+
+.music-button {
+    align-self: center;
+    border: 2px solid var(--border-dark);
+    background: var(--black);
+    color: var(--white);
+    padding: 7px 10px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    cursor: pointer;
+}
+
+.music-button.off {
+    opacity: .55;
+}
+
+
+
+/* =========================
+   LAYOUT TWEAKS
+   ========================= */
+
+.panel {
+    position: relative;
+}
+
+.topbar {
+    flex-wrap: wrap;
+}
+
+.top-stats {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 9px;
+    box-shadow: 0 3px 8px rgba(0,0,0,.3);
+}
+
+.hull-fill {
+    background: #3f6b4a;
+}
+
+.hull-fill.low {
+    background: var(--red);
+}
+
+.pressure-fill.danger {
+    background: var(--red);
+    animation: pulseDanger .8s ease-in-out infinite;
+}
+
+.final-stats {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.new-record {
+    min-height: 18px;
+    margin-top: 6px;
+    color: var(--gold);
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 3px;
+}
+
+
+/* =========================
+   MENU: LOGO + PROFILE
+   ========================= */
+
+.menu-logo {
+    display: block;
+    margin: 0 auto 22px;
+    width: 120px;
+    height: 120px;
+    border-radius: 26px;
+    box-shadow: 0 8px 22px rgba(0,0,0,.35);
+    animation: breathe 5s ease-in-out infinite;
+}
+
+.menu-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.menu-profile .main-button,
+.menu-profile .secondary-button {
+    width: 100%;
+    max-width: 420px;
+}
+
+.profile-greeting {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+}
+
+.profile-name {
+    margin-top: -6px;
+    font-size: 26px;
+    font-weight: bold;
+    letter-spacing: 3px;
+}
+
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+    max-width: 420px;
+    margin: 4px 0 8px;
+}
+
+.profile-stats div {
+    border: 1px solid var(--border);
+    padding: 8px 4px;
+}
+
+.profile-stats span {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+}
+
+.profile-stats strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 22px;
+}
+
+.profile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 420px;
+}
+
+.profile-row {
+    display: flex;
+    gap: 8px;
+}
+
+.profile-pick {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border: 2px solid var(--border-dark);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 12px;
+    letter-spacing: 2px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.profile-pick small {
+    color: var(--muted);
+    font-size: 9px;
+}
+
+.profile-delete {
+    width: 44px;
+    border: 2px solid var(--border-dark);
+    background: transparent;
+    color: var(--red);
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.profile-input {
+    width: 100%;
+    max-width: 420px;
+    padding: 14px;
+    border: 2px solid var(--border-dark);
+    background: var(--white);
+    color: var(--black);
+    font: inherit;
+    font-size: 16px;
+    letter-spacing: 3px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.menu-message {
+    min-height: 14px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--red);
+}
+
+
+/* =========================
+   ANIMATIONS
+   ========================= */
+
+@keyframes dealIn {
+    from {
+        opacity: 0;
+        transform: translateY(-28px) rotate(-7deg) scale(.88);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes flipIn {
+    from {
+        transform: perspective(600px) rotateY(90deg);
+    }
+    to {
+        transform: perspective(600px) rotateY(0deg);
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-8px); }
+    30% { transform: translateX(8px); }
+    45% { transform: translateX(-5px); }
+    60% { transform: translateX(5px); }
+    80% { transform: translateX(-2px); }
+}
+
+@keyframes floatUp {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 0) scale(.8);
+    }
+    15% {
+        opacity: 1;
+        transform: translate(-50%, -8px) scale(1.15);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -70px) scale(1);
+    }
+}
+
+@keyframes flash {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes pop {
+    0% { transform: scale(.6); opacity: 0; }
+    60% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(.96);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes pulseDanger {
+    50% { opacity: .55; }
+}
+
+@keyframes breathe {
+    50% {
+        transform: translateY(-5px);
+        box-shadow: 0 14px 26px rgba(0,0,0,.4);
+    }
+}
+
+.card.deal {
+    animation: dealIn .32s ease-out both;
+}
+
+.card.flip {
+    animation: flipIn .45s ease-out both;
+}
+
+.shake {
+    animation: shake .45s ease;
+}
+
+.float-number {
+    position: absolute;
+    left: 50%;
+    top: 40%;
+    z-index: 5;
+    pointer-events: none;
+    font-size: 28px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 0 rgba(0,0,0,.25);
+    animation: floatUp 1s ease-out forwards;
+}
+
+.float-number.dmg  { color: var(--red); }
+.float-number.heal { color: #2f6b3d; }
+.float-number.vent { color: var(--gold); font-size: 18px; }
+
+.flash-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.flash-overlay.flash-red {
+    background: radial-gradient(circle, transparent 35%, rgba(154,41,41,.6));
+    animation: flash .5s ease-out;
+}
+
+.flash-overlay.flash-gold {
+    background: radial-gradient(circle, transparent 35%, rgba(184,137,50,.55));
+    animation: flash .7s ease-out;
+}
+
+.round-result.win,
+.round-result.lose,
+.round-result.push {
+    animation: pop .35s ease-out;
+}
+
+.modal-card {
+    animation: modalIn .28s ease-out;
+}
+
+.actions button:active,
+.main-button:active {
+    transform: scale(.96);
+}
+
+@media (max-width: 700px) {
+
+    .music-button {
+        padding: 6px 8px;
+        font-size: 10px;
+        letter-spacing: 1px;
+    }
+
+    .brand-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    .profile-name {
+        font-size: 22px;
+    }
+
+    .menu-logo {
+        width: 96px;
+        height: 96px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}

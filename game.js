@@ -491,6 +491,10 @@ function resetState() {
     roundLocked = false;
     carryClockBonus = 0;
 
+    betweenEncounters = false;
+    workshopOpen = false;
+    runOver = false;
+
     enemy = null;
     combatStarted = false;
 
@@ -508,13 +512,33 @@ function resetState() {
 
 function startNewRun() {
 
+    const profile = getProfile();
+
+    if (!profile) {
+        menuView = "profiles";
+        renderMenu();
+        return;
+    }
+
+    if (profile.run && !confirm("Abandon your saved run and start a new one?")) {
+        return;
+    }
+
     resetState();
+
+    profile.run = null;
+    profile.stats.runs++;
+    runStartBest = profile.stats.bestCycle;
+
+    saveProfiles();
 
     getElement("startOverlay").style.display = "none";
 
     getElement("gameOverModal").classList.add("hidden");
     getElement("lootModal").classList.add("hidden");
     getElement("workshopModal").classList.add("hidden");
+
+    startMusic();
 
     logMessage("NEW RUN INITIALIZED.");
 
@@ -576,6 +600,11 @@ function getEnemyForCycle() {
 
 
 function newEncounter() {
+
+    betweenEncounters = false;
+
+    noteCycleReached();
+    saveRun();
 
     enemy = getEnemyForCycle();
 
@@ -727,33 +756,77 @@ function buildCardElement(card) {
 }
 
 
+function syncCardRow(container, cards, hiddenIndex) {
+
+    const keys = cards.map(function (card, index) {
+        return index === hiddenIndex ? "?" : card.rank + card.suit;
+    });
+
+    let compatible = container.children.length <= keys.length;
+
+    for (let i = 0; compatible && i < container.children.length; i++) {
+
+        const existing = container.children[i].getAttribute("data-key");
+
+        if (existing !== keys[i] && !(existing === "?" && keys[i] !== "?")) {
+            compatible = false;
+        }
+    }
+
+    if (!compatible) {
+        container.innerHTML = "";
+    }
+
+    /* a hidden card that is now revealed: flip it */
+    for (let i = 0; i < container.children.length; i++) {
+
+        const current = container.children[i];
+
+        if (current.getAttribute("data-key") === "?" && keys[i] !== "?") {
+
+            const revealed = buildCardElement(cards[i]);
+
+            revealed.setAttribute("data-key", keys[i]);
+            revealed.classList.add("flip");
+
+            container.replaceChild(revealed, current);
+        }
+    }
+
+    /* new cards: deal them in one after the other */
+    const firstNew = container.children.length;
+
+    for (let i = firstNew; i < keys.length; i++) {
+
+        const element = buildCardElement(
+            i === hiddenIndex ? null : cards[i]
+        );
+
+        element.setAttribute("data-key", keys[i]);
+        element.classList.add("deal");
+        element.style.animationDelay = ((i - firstNew) * 120) + "ms";
+
+        container.appendChild(element);
+    }
+}
+
+
 function renderCards() {
 
     const container = getElement("cards");
 
     if (container) {
-
-        container.innerHTML = "";
-
-        for (const card of hand) {
-            container.appendChild(buildCardElement(card));
-        }
+        syncCardRow(container, hand, -1);
     }
 
     const enemyContainer = getElement("enemyCards");
 
     if (enemyContainer) {
-
-        enemyContainer.innerHTML = "";
-
-        enemyHand.forEach(function (card, index) {
-
-            const hiddenCard = enemyHidden && index === 1;
-
-            enemyContainer.appendChild(
-                buildCardElement(hiddenCard ? null : card)
-            );
-        });
+        syncCardRow(
+            enemyContainer,
+            enemyHand,
+            enemyHidden && enemyHand.length > 1 ? 1 : -1
+        );
     }
 
     const enemyValue = getElement("enemyHandValue");
@@ -999,6 +1072,8 @@ function hit() {
 
     pressure += 5;
 
+    vibrate(15);
+
     recomputeHandStats();
     renderCards();
 
@@ -1051,6 +1126,8 @@ function doubleDown() {
     hand.push(drawCard());
 
     pressure += 10;
+
+    vibrate(25);
 
     doubled = true;
 
@@ -1238,6 +1315,10 @@ function playerHitsEnemy() {
 
     logMessage("DAMAGE OUTPUT: " + damage + ".");
 
+    floatNumber("enemyPanel", "-" + damage, "dmg");
+    playAnimation("enemyPanel", "shake");
+    vibrate([30, 30, 70]);
+
     if (enemy.hull <= 0) {
         defeatEnemy();
     }
@@ -1288,6 +1369,11 @@ function enemyHitsPlayer() {
         enemy.name + " HITS YOU FOR " + damage + "."
     );
 
+    floatNumber("playerPanel", "-" + damage, "dmg");
+    playAnimation("playerPanel", "shake");
+    flashScreen("red");
+    vibrate([90, 50, 140]);
+
     if (hull <= 0) {
         gameOver();
     }
@@ -1320,6 +1406,11 @@ function checkPressure() {
         logMessage(
             "OVERHEAT: 15 HULL DAMAGE."
         );
+
+        floatNumber("playerPanel", "-15 OVERHEAT", "dmg");
+        playAnimation("playerPanel", "shake");
+        flashScreen("red");
+        vibrate(250);
 
         if (hull <= 0) {
             gameOver();
@@ -1382,6 +1473,9 @@ function vent() {
         " PRESSURE RELEASED."
     );
 
+    floatNumber("playerPanel", "-" + amount + " PRESSURE", "vent");
+    vibrate(25);
+
     if (hand.length > 0 && !bust) {
         recomputeHandStats();
     }
@@ -1418,6 +1512,7 @@ function defeatEnemy() {
 
         if (hull > before) {
             logMessage("HULL REPAIRED: +" + (hull - before) + ".");
+            floatNumber("playerPanel", "+" + (hull - before), "heal");
         }
     }
 
@@ -1434,6 +1529,8 @@ function defeatEnemy() {
 
     workshopPending =
         defeatedEnemies % 3 === 0;
+
+    onEnemyDefeated();
 
     const name =
         getElement("lootEnemyName");
@@ -1528,6 +1625,8 @@ function openWorkshop() {
 
     generateShop();
 
+    workshopOpen = true;
+
     modal.classList.remove("hidden");
 
     render();
@@ -1535,6 +1634,8 @@ function openWorkshop() {
 
 
 function closeWorkshop() {
+
+    workshopOpen = false;
 
     getElement(
         "workshopModal"
@@ -1660,6 +1761,7 @@ function buyEcho(name, price) {
         );
 
         recalculateMaxHull();
+        saveRun();
 
         generateShop();
         render();
@@ -1792,6 +1894,7 @@ function replaceEcho(index) {
     hideReplacementPanel();
 
     recalculateMaxHull();
+    saveRun();
 
     generateShop();
 
@@ -2012,6 +2115,29 @@ function render() {
     }
 
 
+    const hullBar = getElement("hullBar");
+
+    if (hullBar) {
+
+        const hullPercent =
+            maxHull > 0 ? (hull / maxHull) * 100 : 0;
+
+        hullBar.style.width = Math.max(0, Math.min(100, hullPercent)) + "%";
+        hullBar.classList.toggle("low", hullPercent <= 30);
+    }
+
+    const pressureWarning = getElement("pressureBar");
+
+    if (pressureWarning) {
+
+        const warnLimit = hasEcho("PRESSURE CHAMBER") ? 120 : 100;
+
+        pressureWarning.classList.toggle(
+            "danger",
+            pressure / warnLimit >= 0.8
+        );
+    }
+
     const tier =
         getElement(
             "enemyTier"
@@ -2081,6 +2207,12 @@ function updateActionButtons() {
 
 function gameOver() {
 
+    if (runOver) {
+        return;
+    }
+
+    runOver = true;
+
     combatStarted = false;
 
     const modal =
@@ -2112,6 +2244,8 @@ function gameOver() {
             cogs;
     }
 
+    finishRunStats();
+
     modal.classList.remove(
         "hidden"
     );
@@ -2138,7 +2272,913 @@ function returnToMenu() {
 
     getElement("startOverlay").style.display = "flex";
 
+    menuView = "main";
+    renderMenu();
+
     render();
+}
+
+
+/* =========================
+   MUSIC
+   Put your track at assets/music/theme.mp3
+   (or change MUSIC_FILE below).
+   ========================= */
+
+const MUSIC_FILE = "./assets/music/theme.mp3";
+const MUSIC_VOLUME = 0.35;
+const MUSIC_STORAGE_KEY = "corvaliMusic";
+
+let music = null;
+let musicEnabled = true;
+let musicWasPlaying = false;
+let musicFadeTimer = null;
+
+
+function loadMusicPreference() {
+
+    try {
+        musicEnabled =
+            localStorage.getItem(MUSIC_STORAGE_KEY) !== "off";
+    }
+    catch (error) {
+        musicEnabled = true;
+    }
+}
+
+
+function saveMusicPreference() {
+
+    try {
+        localStorage.setItem(
+            MUSIC_STORAGE_KEY,
+            musicEnabled ? "on" : "off"
+        );
+    }
+    catch (error) {
+        /* storage not available: ignore */
+    }
+}
+
+
+function initMusic() {
+
+    if (music) {
+        return;
+    }
+
+    music = new Audio(MUSIC_FILE);
+
+    music.loop = false;
+    music.volume = MUSIC_VOLUME;
+    music.preload = "auto";
+
+    /* The track ends with a fade-out, so instead of a hard loop
+       we restart it manually with a fade-in. */
+    music.addEventListener("ended", function () {
+
+        music.currentTime = 0;
+
+        startMusic();
+    });
+
+    music.addEventListener("error", function () {
+
+        logMessage(
+            "MUSIC FILE NOT FOUND: " + MUSIC_FILE
+        );
+    });
+}
+
+
+function fadeMusicIn() {
+
+    const steps = 20;
+
+    let step = 0;
+
+    clearInterval(musicFadeTimer);
+
+    music.volume = 0;
+
+    musicFadeTimer = setInterval(function () {
+
+        step++;
+
+        music.volume = Math.min(
+            MUSIC_VOLUME,
+            MUSIC_VOLUME * step / steps
+        );
+
+        if (step >= steps) {
+            clearInterval(musicFadeTimer);
+        }
+
+    }, 100);
+}
+
+
+function startMusic() {
+
+    initMusic();
+
+    if (!musicEnabled) {
+        return;
+    }
+
+    const attempt = music.play();
+
+    fadeMusicIn();
+
+    if (attempt && attempt.catch) {
+        attempt.catch(function (error) {
+
+            if (error && error.name === "NotAllowedError") {
+                logMessage(
+                    "MUSIC BLOCKED BY THE BROWSER. TAP THE ♪ BUTTON."
+                );
+            }
+        });
+    }
+}
+
+
+function toggleMusic() {
+
+    musicEnabled = !musicEnabled;
+
+    saveMusicPreference();
+
+    initMusic();
+
+    if (musicEnabled) {
+        startMusic();
+    }
+    else {
+        clearInterval(musicFadeTimer);
+        music.pause();
+    }
+
+    updateMusicButton();
+}
+
+
+function updateMusicButton() {
+
+    const button = getElement("musicButton");
+
+    if (!button) {
+        return;
+    }
+
+    button.textContent = musicEnabled ? "♪ ON" : "♪ OFF";
+
+    button.classList.toggle("off", !musicEnabled);
+
+    button.setAttribute(
+        "aria-pressed",
+        musicEnabled ? "true" : "false"
+    );
+}
+
+
+document.addEventListener("visibilitychange", function () {
+
+    if (!music) {
+        return;
+    }
+
+    if (document.hidden) {
+
+        if (!music.paused) {
+            musicWasPlaying = true;
+            music.pause();
+        }
+    }
+    else if (musicWasPlaying && musicEnabled) {
+
+        musicWasPlaying = false;
+        startMusic();
+    }
+});
+
+
+/* =========================
+   FEEDBACK: VIBRATION + ANIMATION
+   (vibration works on Android; iPhone Safari does not support it)
+   ========================= */
+
+const VIBRATION_KEY = "corvaliVibration";
+
+let vibrationEnabled = true;
+
+
+function vibrationSupported() {
+
+    return typeof navigator !== "undefined" &&
+        typeof navigator.vibrate === "function";
+}
+
+
+function loadVibrationPreference() {
+
+    try {
+        vibrationEnabled =
+            localStorage.getItem(VIBRATION_KEY) !== "off";
+    }
+    catch (error) {
+        vibrationEnabled = true;
+    }
+}
+
+
+function vibrate(pattern) {
+
+    if (!vibrationEnabled || !vibrationSupported()) {
+        return;
+    }
+
+    try {
+        navigator.vibrate(pattern);
+    }
+    catch (error) {
+        /* ignore */
+    }
+}
+
+
+function toggleVibration() {
+
+    vibrationEnabled = !vibrationEnabled;
+
+    try {
+        localStorage.setItem(
+            VIBRATION_KEY,
+            vibrationEnabled ? "on" : "off"
+        );
+    }
+    catch (error) {
+        /* ignore */
+    }
+
+    updateVibrationButton();
+
+    vibrate(40);
+}
+
+
+function updateVibrationButton() {
+
+    const button = getElement("vibrationButton");
+
+    if (!button) {
+        return;
+    }
+
+    if (!vibrationSupported()) {
+        button.style.display = "none";
+        return;
+    }
+
+    button.textContent = vibrationEnabled ? "VIB ON" : "VIB OFF";
+
+    button.classList.toggle("off", !vibrationEnabled);
+
+    button.setAttribute(
+        "aria-pressed",
+        vibrationEnabled ? "true" : "false"
+    );
+}
+
+
+function playAnimation(id, className) {
+
+    const element = getElement(id);
+
+    if (!element) {
+        return;
+    }
+
+    element.classList.remove(className);
+
+    void element.offsetWidth;
+
+    element.classList.add(className);
+}
+
+
+function floatNumber(panelId, text, type) {
+
+    const panel = getElement(panelId);
+
+    if (!panel) {
+        return;
+    }
+
+    const element = document.createElement("div");
+
+    element.className = "float-number " + type;
+    element.textContent = text;
+
+    panel.appendChild(element);
+
+    setTimeout(function () {
+
+        if (element.parentNode) {
+            element.parentNode.removeChild(element);
+        }
+
+    }, 1100);
+}
+
+
+function flashScreen(type) {
+
+    const overlay = getElement("flashOverlay");
+
+    if (!overlay) {
+        return;
+    }
+
+    overlay.className = "flash-overlay";
+
+    void overlay.offsetWidth;
+
+    overlay.className = "flash-overlay flash-" + type;
+}
+
+
+/* =========================
+   PROFILE + SAVE
+   Stored on this device only (localStorage).
+   ========================= */
+
+const STORE_PROFILES = "corvali.profiles";
+const STORE_CURRENT = "corvali.currentProfile";
+const MAX_PROFILE_NAME = 14;
+
+let profiles = {};
+let currentProfile = null;
+let menuView = "main";
+
+let betweenEncounters = false;
+let workshopOpen = false;
+let runOver = false;
+let runStartBest = 0;
+
+
+function readJson(key, fallback) {
+
+    try {
+
+        const raw = localStorage.getItem(key);
+
+        return raw ? JSON.parse(raw) : fallback;
+    }
+    catch (error) {
+        return fallback;
+    }
+}
+
+
+function writeJson(key, value) {
+
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+    }
+    catch (error) {
+        return false;
+    }
+}
+
+
+function newProfileData(name) {
+
+    return {
+        name: name,
+        created: Date.now(),
+        stats: {
+            runs: 0,
+            deaths: 0,
+            bestCycle: 0,
+            kills: 0,
+            cogsEarned: 0
+        },
+        run: null
+    };
+}
+
+
+function normalizeProfile(name, data) {
+
+    const base = newProfileData(name);
+
+    if (!data || typeof data !== "object") {
+        return base;
+    }
+
+    const stats = data.stats || {};
+
+    Object.keys(base.stats).forEach(function (key) {
+
+        const value = Number(stats[key]);
+
+        base.stats[key] = Number.isFinite(value) ? value : 0;
+    });
+
+    base.created = Number(data.created) || base.created;
+    base.run = data.run && typeof data.run === "object" ? data.run : null;
+
+    return base;
+}
+
+
+function loadProfiles() {
+
+    const stored = readJson(STORE_PROFILES, {});
+
+    profiles = {};
+
+    if (stored && typeof stored === "object") {
+
+        Object.keys(stored).forEach(function (name) {
+            profiles[name] = normalizeProfile(name, stored[name]);
+        });
+    }
+
+    const last = readJson(STORE_CURRENT, null);
+
+    currentProfile = last && profiles[last] ? last : null;
+}
+
+
+function saveProfiles() {
+
+    writeJson(STORE_PROFILES, profiles);
+    writeJson(STORE_CURRENT, currentProfile);
+}
+
+
+function sanitizeProfileName(raw) {
+
+    return String(raw || "")
+        .toUpperCase()
+        .replace(/[^\p{L}\p{N} _-]/gu, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, MAX_PROFILE_NAME);
+}
+
+
+function getProfile() {
+
+    return currentProfile ? profiles[currentProfile] : null;
+}
+
+
+function createProfile(rawName) {
+
+    const name = sanitizeProfileName(rawName);
+
+    if (!name) {
+        return null;
+    }
+
+    if (!profiles[name]) {
+        profiles[name] = newProfileData(name);
+    }
+
+    currentProfile = name;
+
+    saveProfiles();
+
+    return name;
+}
+
+
+function selectProfile(name) {
+
+    if (!profiles[name]) {
+        return;
+    }
+
+    currentProfile = name;
+
+    saveProfiles();
+
+    menuView = "main";
+
+    renderMenu();
+}
+
+
+function deleteProfile(name) {
+
+    if (!profiles[name]) {
+        return;
+    }
+
+    if (!confirm("Delete profile " + name + " and all its progress?")) {
+        return;
+    }
+
+    delete profiles[name];
+
+    if (currentProfile === name) {
+        currentProfile = null;
+    }
+
+    saveProfiles();
+
+    renderMenu();
+}
+
+
+function noteCycleReached() {
+
+    const profile = getProfile();
+
+    if (!profile) {
+        return;
+    }
+
+    profile.stats.bestCycle = Math.max(profile.stats.bestCycle, cycle);
+}
+
+
+function saveRun() {
+
+    const profile = getProfile();
+
+    if (!profile || runOver) {
+        return;
+    }
+
+    profile.run = {
+        cycle: cycle,
+        between: betweenEncounters,
+        workshop: workshopPending || workshopOpen,
+        cogs: cogs,
+        hull: hull,
+        defeated: defeatedEnemies,
+        echoes: equippedEchoes.map(function (echo) {
+            return echo.name;
+        }),
+        savedAt: Date.now()
+    };
+
+    saveProfiles();
+}
+
+
+function onEnemyDefeated() {
+
+    const profile = getProfile();
+
+    if (profile) {
+        profile.stats.kills++;
+        profile.stats.cogsEarned += lootReward;
+    }
+
+    betweenEncounters = true;
+
+    saveRun();
+
+    flashScreen("gold");
+    vibrate([40, 40, 40, 40, 160]);
+}
+
+
+function finishRunStats() {
+
+    const profile = getProfile();
+
+    let record = false;
+    let best = cycle;
+
+    if (profile) {
+
+        profile.stats.deaths++;
+
+        record = cycle > runStartBest;
+
+        profile.stats.bestCycle = Math.max(profile.stats.bestCycle, cycle);
+
+        best = profile.stats.bestCycle;
+
+        profile.run = null;
+
+        saveProfiles();
+    }
+
+    const finalBest = getElement("finalBest");
+
+    if (finalBest) {
+        finalBest.textContent = best;
+    }
+
+    const recordElement = getElement("newRecord");
+
+    if (recordElement) {
+        recordElement.textContent = record ? "NEW RECORD" : "";
+    }
+
+    flashScreen("red");
+    vibrate([300, 120, 300]);
+}
+
+
+function hideMenuAndModals() {
+
+    getElement("startOverlay").style.display = "none";
+
+    getElement("gameOverModal").classList.add("hidden");
+    getElement("lootModal").classList.add("hidden");
+    getElement("workshopModal").classList.add("hidden");
+}
+
+
+function continueRun() {
+
+    const profile = getProfile();
+
+    if (!profile || !profile.run) {
+        return;
+    }
+
+    const saved = profile.run;
+
+    resetState();
+
+    cycle = Math.max(1, Math.floor(Number(saved.cycle)) || 1);
+    cogs = Math.max(0, Math.floor(Number(saved.cogs)) || 0);
+    defeatedEnemies = Math.max(0, Math.floor(Number(saved.defeated)) || 0);
+
+    equippedEchoes = (Array.isArray(saved.echoes) ? saved.echoes : [])
+        .map(function (name) {
+            return ECHOES.find(function (echo) {
+                return echo.name === name;
+            });
+        })
+        .filter(Boolean)
+        .slice(0, 3);
+
+    recalculateMaxHull();
+
+    hull = Math.max(
+        1,
+        Math.min(maxHull, Math.floor(Number(saved.hull)) || maxHull)
+    );
+
+    runStartBest = profile.stats.bestCycle;
+
+    hideMenuAndModals();
+
+    startMusic();
+
+    logMessage("RUN RESTORED. CYCLE " + cycle + ".");
+
+    betweenEncounters = !!saved.between;
+
+    if (saved.between) {
+
+        if (saved.workshop) {
+            openWorkshop();
+        }
+        else {
+            continueToNextEncounter();
+        }
+    }
+    else {
+        newEncounter();
+    }
+
+    render();
+}
+
+
+/* =========================
+   MENU (profile screen)
+   ========================= */
+
+function makeElement(tag, className, text) {
+
+    const element = document.createElement(tag);
+
+    if (className) {
+        element.className = className;
+    }
+
+    if (text !== undefined) {
+        element.textContent = text;
+    }
+
+    return element;
+}
+
+
+function makeButton(label, className, handler) {
+
+    const button = makeElement("button", className, label);
+
+    button.addEventListener("click", handler);
+
+    return button;
+}
+
+
+function submitProfile() {
+
+    const input = getElement("profileName");
+
+    const name = createProfile(input ? input.value : "");
+
+    if (!name) {
+
+        const message = getElement("menuMessage");
+
+        if (message) {
+            message.textContent = "ENTER A NAME (LETTERS OR NUMBERS)";
+        }
+
+        return;
+    }
+
+    menuView = "main";
+
+    renderMenu();
+}
+
+
+function renderMenu() {
+
+    const root = getElement("menuProfile");
+
+    if (!root) {
+        return;
+    }
+
+    root.innerHTML = "";
+
+    const profile = getProfile();
+
+    if (!profile || menuView === "profiles") {
+        renderProfilePicker(root);
+        return;
+    }
+
+    root.appendChild(makeElement("div", "profile-greeting", "ENGINEER"));
+    root.appendChild(makeElement("div", "profile-name", profile.name));
+
+    const stats = makeElement("div", "profile-stats");
+
+    [
+        ["BEST CYCLE", profile.stats.bestCycle],
+        ["RUNS", profile.stats.runs],
+        ["DESTROYED", profile.stats.kills]
+    ].forEach(function (entry) {
+
+        const box = makeElement("div");
+
+        box.appendChild(makeElement("span", "", entry[0]));
+        box.appendChild(makeElement("strong", "", String(entry[1])));
+
+        stats.appendChild(box);
+    });
+
+    root.appendChild(stats);
+
+    if (profile.run) {
+
+        root.appendChild(
+            makeButton(
+                "CONTINUE RUN - CYCLE " + profile.run.cycle,
+                "main-button",
+                continueRun
+            )
+        );
+    }
+
+    root.appendChild(
+        makeButton(
+            "DESCEND INTO THE ABYSS",
+            profile.run ? "secondary-button" : "main-button",
+            startNewRun
+        )
+    );
+
+    root.appendChild(
+        makeButton(
+            "SWITCH PROFILE",
+            "secondary-button",
+            function () {
+                menuView = "profiles";
+                renderMenu();
+            }
+        )
+    );
+}
+
+
+function renderProfilePicker(root) {
+
+    root.appendChild(
+        makeElement(
+            "div",
+            "profile-greeting",
+            Object.keys(profiles).length ? "SELECT OR CREATE A PROFILE" : "IDENTIFY YOURSELF"
+        )
+    );
+
+    const list = makeElement("div", "profile-list");
+
+    Object.keys(profiles).forEach(function (name) {
+
+        const row = makeElement("div", "profile-row");
+
+        const pick = makeElement("button", "profile-pick", name);
+
+        pick.appendChild(
+            makeElement(
+                "small",
+                "",
+                "BEST CYCLE " + profiles[name].stats.bestCycle
+            )
+        );
+
+        pick.addEventListener("click", function () {
+            selectProfile(name);
+        });
+
+        const remove = makeButton("✕", "profile-delete", function () {
+            deleteProfile(name);
+        });
+
+        remove.setAttribute("aria-label", "Delete profile " + name);
+
+        row.appendChild(pick);
+        row.appendChild(remove);
+
+        list.appendChild(row);
+    });
+
+    root.appendChild(list);
+
+    const input = makeElement("input", "profile-input");
+
+    input.id = "profileName";
+    input.type = "text";
+    input.maxLength = MAX_PROFILE_NAME;
+    input.placeholder = "ENGINEER NAME";
+    input.setAttribute("autocomplete", "off");
+
+    input.addEventListener("keydown", function (event) {
+
+        if (event.key === "Enter") {
+            submitProfile();
+        }
+    });
+
+    root.appendChild(input);
+
+    const message = makeElement("div", "menu-message");
+
+    message.id = "menuMessage";
+
+    root.appendChild(message);
+
+    root.appendChild(
+        makeButton("CREATE PROFILE", "main-button", submitProfile)
+    );
+
+    if (getProfile()) {
+
+        root.appendChild(
+            makeButton(
+                "BACK",
+                "secondary-button",
+                function () {
+                    menuView = "main";
+                    renderMenu();
+                }
+            )
+        );
+    }
+}
+
+
+function registerServiceWorker() {
+
+    if (
+        typeof navigator !== "undefined" &&
+        "serviceWorker" in navigator &&
+        location.protocol.indexOf("http") === 0
+    ) {
+        navigator.serviceWorker.register("./sw.js").catch(function () {
+            /* offline support is optional */
+        });
+    }
 }
 
 
@@ -2149,6 +3189,17 @@ function returnToMenu() {
 document.addEventListener(
     "DOMContentLoaded",
     function () {
+
+        loadMusicPreference();
+        updateMusicButton();
+
+        loadVibrationPreference();
+        updateVibrationButton();
+
+        loadProfiles();
+        renderMenu();
+
+        registerServiceWorker();
 
         render();
 

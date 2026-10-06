@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -10,6 +10,13 @@
     <meta name="description" content="A steampunk Blackjack roguelike.">
 
     <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Corvali">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="./style.css">
 </head>
 
@@ -17,9 +24,13 @@
 
 <div id="app">
 
+    <div id="flashOverlay" class="flash-overlay"></div>
+
     <!-- MENU -->
     <section id="startOverlay" class="screen menu-screen">
         <div class="menu-frame">
+
+            <img class="menu-logo" src="./icon-192.png" width="120" height="120" alt="">
 
             <div class="eyebrow">CORVALI ENGINE // SYSTEM 01</div>
 
@@ -31,9 +42,7 @@
 
             <div class="menu-divider"></div>
 
-            <button class="main-button" onclick="startNewRun()">
-                DISCENDI NELL'ABISSO
-            </button>
+            <div id="menuProfile" class="menu-profile"></div>
 
             <div class="menu-footer">
                 THE MACHINE REMEMBERS.
@@ -48,9 +57,12 @@
 
         <header class="topbar">
 
-            <div>
-                <div class="game-title">CORVALI'S ECHOES</div>
-                <div class="game-subtitle">ENGINE // ACTIVE</div>
+            <div class="brand">
+                <img class="brand-icon" src="./icon-192.png" width="40" height="40" alt="">
+                <div>
+                    <div class="game-title">CORVALI'S ECHOES</div>
+                    <div class="game-subtitle">ENGINE // ACTIVE</div>
+                </div>
             </div>
 
             <div class="top-stats">
@@ -63,13 +75,31 @@
                     <span>COGS</span>
                     <strong id="cogs">0</strong>
                 </div>
+
+                <button
+                    id="vibrationButton"
+                    class="music-button"
+                    onclick="toggleVibration()"
+                    aria-label="Vibration on/off"
+                    aria-pressed="true">
+                    VIB ON
+                </button>
+
+                <button
+                    id="musicButton"
+                    class="music-button"
+                    onclick="toggleMusic()"
+                    aria-label="Musica on/off"
+                    aria-pressed="true">
+                    ♪ ON
+                </button>
             </div>
 
         </header>
 
 
         <!-- PLAYER STATUS -->
-        <section class="panel player-panel">
+        <section id="playerPanel" class="panel player-panel">
 
             <div class="panel-title purple">
                 CORVALI
@@ -79,15 +109,19 @@
 
                 <div class="stat">
                     <span>HULL</span>
-                    <small>integrità dello scafo</small>
+                    <small>hull integrity</small>
                     <strong>
                         <span id="hull">100</span>/<span id="maxHull">100</span>
                     </strong>
+
+                    <div class="bar">
+                        <div id="hullBar" class="bar-fill hull-fill"></div>
+                    </div>
                 </div>
 
                 <div class="stat">
                     <span>PRESSURE</span>
-                    <small>pressione del sistema</small>
+                    <small>system pressure</small>
                     <strong>
                         <span id="pressure">0</span>/<span id="maxPressure">100</span>
                     </strong>
@@ -99,13 +133,13 @@
 
                 <div class="stat">
                     <span>BASE TORQUE</span>
-                    <small>potenza meccanica</small>
+                    <small>mechanical power</small>
                     <strong id="baseTorque">0</strong>
                 </div>
 
                 <div class="stat">
                     <span>CLOCK POWER</span>
-                    <small>potenza temporale</small>
+                    <small>time power</small>
                     <strong id="clockPower">0</strong>
                 </div>
 
@@ -136,7 +170,7 @@
 
 
         <!-- ENEMY -->
-        <section class="panel enemy-panel">
+        <section id="enemyPanel" class="panel enemy-panel">
 
             <div class="enemy-header">
 
@@ -332,6 +366,8 @@
 
             <h2>ENGINE SILENCED</h2>
 
+            <div id="newRecord" class="new-record"></div>
+
             <div class="final-stats">
 
                 <div>
@@ -342,6 +378,11 @@
                 <div>
                     <span>COGS</span>
                     <strong id="finalCogs">0</strong>
+                </div>
+
+                <div>
+                    <span>BEST CYCLE</span>
+                    <strong id="finalBest">1</strong>
                 </div>
 
             </div>
