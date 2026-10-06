@@ -55,7 +55,6 @@ let roundToken = 0;
 /* Tuning */
 
 const ENEMY_STAND_ON = 17;
-const REPAIR_AFTER_KILL = 10;
 const REVEAL_DELAY = 700;
 const NEXT_HAND_DELAY = 1300;
 
@@ -135,7 +134,7 @@ const ECHOES = [
     {
         name: "STEAM VALVE",
         rarity: "FORGED",
-        description: "Vent removes an additional 10 Pressure."
+        description: "Each Vent gives +4 Clock Power to your current hand (max +8)."
     },
 
     {
@@ -244,6 +243,80 @@ const ECHOES = [
         name: "CORVALI ECHO",
         rarity: "RELIC",
         description: "All Clock Power bonuses are increased by 25%."
+    },
+
+    /* ---- new echoes ---- */
+
+    {
+        name: "SPARE PARTS",
+        rarity: "WORN",
+        description: "Gain +3 Cogs every time you win a round."
+    },
+
+    {
+        name: "SALVAGE ENGINE",
+        rarity: "WORN",
+        description: "Repair 10 extra Hull when you destroy an enemy."
+    },
+
+    {
+        name: "STEAM BROKER",
+        rarity: "WORN",
+        description: "Every Vent earns you +2 Cogs."
+    },
+
+    {
+        name: "IRON LUNG",
+        rarity: "FORGED",
+        description: "Overheat deals 5 Hull damage instead of 15."
+    },
+
+    {
+        name: "GLASS PISTON",
+        rarity: "FORGED",
+        description: "Your damage is +30%, but enemy hits deal +3 damage."
+    },
+
+    {
+        name: "TICKING BOMB",
+        rarity: "FORGED",
+        description: "A Push deals 8 damage to the enemy."
+    },
+
+    {
+        name: "BRASS PERISCOPE",
+        rarity: "FORGED",
+        description: "You can see the enemy's hidden card."
+    },
+
+    {
+        name: "LAST STAND",
+        rarity: "FORGED",
+        description: "Below 30% Hull, you deal +50% damage."
+    },
+
+    {
+        name: "DOUBLE CRANK",
+        rarity: "FORGED",
+        description: "Double no longer increases the damage you take."
+    },
+
+    {
+        name: "AEGIS GEAR",
+        rarity: "ENGINEERED",
+        description: "Ignore the first enemy hit of every encounter."
+    },
+
+    {
+        name: "TITAN HAMMER",
+        rarity: "ENGINEERED",
+        description: "Winning with 20 or more ignores all enemy Armor."
+    },
+
+    {
+        name: "STEEL NERVES",
+        rarity: "ENGINEERED",
+        description: "HIT adds no Pressure."
     }
 
 ];
@@ -253,105 +326,44 @@ const ECHOES = [
    ENEMY DATABASE
    ========================= */
 
-const ENEMIES = [
+/*
+   Enemy types
+   - COMMON: every normal fight
+   - ELITE : every 5th enemy  (cycle 5, 15, 25...)
+   - BOSS  : every 10th enemy (cycle 10, 20, 30...)
+   Attack and armor grow slowly with every tier (see getEnemyForCycle).
+*/
 
-    {
-        name: "BRASS SENTINEL",
-        hull: 50,
-        attack: 10,
-        armor: 4,
-        ability: "ARMOR"
-    },
+const ENEMY_TYPES = {
 
-    {
-        name: "GEAR HOUND",
-        hull: 60,
-        attack: 12,
-        armor: 1,
-        ability: "PRESSURE"
-    },
+    COMMON: { hull: 50,  attack: 9,  armor: 0, loot: 1,    repair: 10 },
+    ELITE:  { hull: 85,  attack: 11, armor: 2, loot: 1.75, repair: 15 },
+    BOSS:   { hull: 140, attack: 12, armor: 4, loot: 3,    repair: 30 }
+};
 
-    {
-        name: "BOILER WASP",
-        hull: 65,
-        attack: 13,
-        armor: 2,
-        ability: "HEAT"
-    },
+const ENEMY_POOLS = {
 
-    {
-        name: "CLOCKWORK GUARD",
-        hull: 80,
-        attack: 12,
-        armor: 8,
-        ability: "FORTRESS"
-    },
+    COMMON: [
+        { name: "BRASS SENTINEL",  ability: "NONE" },
+        { name: "GEAR HOUND",      ability: "PRESSURE" },
+        { name: "BOILER WASP",     ability: "HEAT" },
+        { name: "RUST MAW",        ability: "NONE" },
+        { name: "TICKING SPIDER",  ability: "NONE" }
+    ],
 
-    {
-        name: "IRON REVENANT",
-        hull: 90,
-        attack: 15,
-        armor: 4,
-        ability: "BUST"
-    },
+    ELITE: [
+        { name: "CLOCKWORK GUARD", ability: "FORTRESS" },
+        { name: "IRON REVENANT",   ability: "BUST" },
+        { name: "CHRONOPHAGE",     ability: "TIME" },
+        { name: "AETHER GOLEM",    ability: "HEAVY ARMOR" }
+    ],
 
-    {
-        name: "FURNACE KING",
-        hull: 100,
-        attack: 17,
-        armor: 5,
-        ability: "OVERHEAT"
-    },
-
-    {
-        name: "CHRONOPHAGE",
-        hull: 110,
-        attack: 18,
-        armor: 6,
-        ability: "TIME"
-    },
-
-    {
-        name: "AETHER GOLEM",
-        hull: 125,
-        attack: 20,
-        armor: 10,
-        ability: "HEAVY ARMOR"
-    },
-
-    {
-        name: "RUST MAW",
-        hull: 140,
-        attack: 21,
-        armor: 7,
-        ability: "CORROSION"
-    },
-
-    {
-        name: "TICKING SPIDER",
-        hull: 150,
-        attack: 22,
-        armor: 5,
-        ability: "SABOTAGE"
-    },
-
-    {
-        name: "ANCIENT AUTOMATON",
-        hull: 175,
-        attack: 24,
-        armor: 10,
-        ability: "REPAIR"
-    },
-
-    {
-        name: "CORVALI ENGINE",
-        hull: 220,
-        attack: 28,
-        armor: 12,
-        ability: "OVERCLOCK"
-    }
-
-];
+    BOSS: [
+        { name: "FURNACE KING",      ability: "OVERHEAT" },
+        { name: "ANCIENT AUTOMATON", ability: "REPAIR" },
+        { name: "CORVALI ENGINE",    ability: "OVERCLOCK" }
+    ]
+};
 
 
 /* =========================
@@ -494,6 +506,9 @@ function resetState() {
     betweenEncounters = false;
     workshopOpen = false;
     runOver = false;
+    freePicks = 0;
+    aegisUsed = false;
+    ventClockBonus = 0;
 
     enemy = null;
     combatStarted = false;
@@ -560,41 +575,49 @@ function getTier() {
 }
 
 
+function getEnemyType(cycleNumber) {
+
+    if (cycleNumber % 10 === 0) {
+        return "BOSS";
+    }
+
+    if (cycleNumber % 5 === 0) {
+        return "ELITE";
+    }
+
+    return "COMMON";
+}
+
+
 function getEnemyForCycle() {
 
     const tier = getTier();
 
-    const poolSize = Math.min(
-        ENEMIES.length,
-        Math.max(3, tier * 3)
-    );
+    const typeKey = getEnemyType(cycle);
 
-    const baseEnemy =
-        ENEMIES[
-            randomNumber(
-                0,
-                poolSize - 1
-            )
-        ];
+    const type = ENEMY_TYPES[typeKey];
 
-    const scale =
-        1 + ((tier - 1) * 0.25);
+    const pool = ENEMY_POOLS[typeKey];
+
+    const base =
+        typeKey === "BOSS"
+            ? pool[(Math.floor(cycle / 10) - 1) % pool.length]
+            : pool[randomNumber(0, pool.length - 1)];
+
+    const hullScale = 1 + ((tier - 1) * 0.25);
+
+    const maxEnemyHull = Math.round(type.hull * hullScale);
 
     return {
-        name: baseEnemy.name,
-        maxHull: Math.round(
-            baseEnemy.hull * scale
-        ),
-        hull: Math.round(
-            baseEnemy.hull * scale
-        ),
-        attack: Math.round(
-            baseEnemy.attack * scale
-        ),
-        armor: Math.round(
-            baseEnemy.armor * scale
-        ),
-        ability: baseEnemy.ability
+        name: base.name,
+        type: typeKey,
+        maxHull: maxEnemyHull,
+        hull: maxEnemyHull,
+        attack: type.attack + ((tier - 1) * 2),
+        armor: type.armor + (tier - 1),
+        ability: base.ability,
+        lootMultiplier: type.loot,
+        repair: type.repair
     };
 }
 
@@ -602,6 +625,7 @@ function getEnemyForCycle() {
 function newEncounter() {
 
     betweenEncounters = false;
+    aegisUsed = false;
 
     noteCycleReached();
     saveRun();
@@ -625,7 +649,7 @@ function newEncounter() {
     applyCycleEchoes();
 
     logMessage(
-        "ENCOUNTER: " +
+        "ENCOUNTER [" + enemy.type + "]: " +
         enemy.name +
         "."
     );
@@ -825,7 +849,7 @@ function renderCards() {
         syncCardRow(
             enemyContainer,
             enemyHand,
-            enemyHidden && enemyHand.length > 1 ? 1 : -1
+            enemyHidden && !hasEcho("BRASS PERISCOPE") && enemyHand.length > 1 ? 1 : -1
         );
     }
 
@@ -836,7 +860,7 @@ function renderCards() {
         if (enemyHand.length === 0) {
             enemyValue.textContent = "0";
         }
-        else if (enemyHidden) {
+        else if (enemyHidden && !hasEcho("BRASS PERISCOPE")) {
             enemyValue.textContent =
                 evaluateHand([enemyHand[0]]).total + " + ?";
         }
@@ -858,6 +882,7 @@ function dealHand() {
 
     enemyHidden = true;
     doubled = false;
+    ventClockBonus = 0;
     roundLocked = false;
 
     setRoundResult("");
@@ -1004,6 +1029,7 @@ function recomputeHandStats() {
     }
 
     clockPower += carryClockBonus;
+    clockPower += ventClockBonus;
 
     if (doubled && hasEcho("OVERDRIVE")) {
         clockPower += 5;
@@ -1070,7 +1096,9 @@ function hit() {
 
     hand.push(drawCard());
 
-    pressure += 5;
+    if (!hasEcho("STEEL NERVES")) {
+        pressure += 5;
+    }
 
     vibrate(15);
 
@@ -1212,6 +1240,13 @@ function applyRoundOutcome(player, foe) {
                 : "YOU WIN: " + player.total + " VS " + foe.total + "."
         );
 
+        if (hasEcho("SPARE PARTS")) {
+
+            cogs += 3;
+
+            logMessage("SPARE PARTS: +3 COGS.");
+        }
+
         playerHitsEnemy();
 
         if (!combatStarted) {
@@ -1271,6 +1306,10 @@ function applyRoundOutcome(player, foe) {
         logMessage(
             "PUSH: " + player.total + " VS " + foe.total + "."
         );
+
+        if (hasEcho("TICKING BOMB") && flatDamageEnemy(8, "TICKING BOMB")) {
+            return;
+        }
     }
 
     if (!player.bust) {
@@ -1293,6 +1332,28 @@ function applyRoundOutcome(player, foe) {
 }
 
 
+function flatDamageEnemy(amount, source) {
+
+    if (!enemy || enemy.hull <= 0) {
+        return false;
+    }
+
+    enemy.hull = Math.max(0, enemy.hull - amount);
+
+    logMessage(source + " DEALT " + amount + " DAMAGE.");
+
+    floatNumber("enemyPanel", "-" + amount, "dmg");
+    playAnimation("enemyPanel", "shake");
+
+    if (enemy.hull <= 0) {
+        defeatEnemy();
+        return true;
+    }
+
+    return false;
+}
+
+
 function playerHitsEnemy() {
 
     let damage = Math.floor(
@@ -1305,7 +1366,19 @@ function playerHitsEnemy() {
         armor = Math.max(0, armor - 5);
     }
 
+    if (hasEcho("TITAN HAMMER") && handValue >= 20) {
+        armor = 0;
+    }
+
     damage = Math.max(1, damage - armor);
+
+    if (hasEcho("GLASS PISTON")) {
+        damage = Math.round(damage * 1.3);
+    }
+
+    if (hasEcho("LAST STAND") && hull <= maxHull * 0.3) {
+        damage = Math.round(damage * 1.5);
+    }
 
     if (doubled) {
         damage *= 2;
@@ -1335,18 +1408,26 @@ function enemyHitsPlayer() {
         return;
     }
 
+    if (hasEcho("AEGIS GEAR") && !aegisUsed) {
+
+        aegisUsed = true;
+
+        logMessage("AEGIS GEAR BLOCKED THE HIT.");
+
+        floatNumber("playerPanel", "BLOCKED", "vent");
+        vibrate(40);
+
+        return;
+    }
+
     let damage = enemy.attack;
 
     if (hasEcho("COUNTERWEIGHT")) {
         damage -= 2;
     }
 
-    if (enemy.ability === "CORROSION") {
+    if (hasEcho("GLASS PISTON")) {
         damage += 3;
-    }
-
-    if (enemy.ability === "OVERCLOCK") {
-        damage += 5;
     }
 
     if (enemy.ability === "PRESSURE") {
@@ -1357,7 +1438,7 @@ function enemyHitsPlayer() {
         pressure += 8;
     }
 
-    if (doubled) {
+    if (doubled && !hasEcho("DOUBLE CRANK")) {
         damage *= 2;
     }
 
@@ -1386,28 +1467,27 @@ function enemyHitsPlayer() {
 
 function checkPressure() {
 
-    let limit =
+    const limit =
         hasEcho("PRESSURE CHAMBER")
             ? 120
             : 100;
 
     if (pressure > limit) {
 
-        hull -= 15;
+        const overheatDamage =
+            hasEcho("IRON LUNG")
+                ? 5
+                : 15;
 
-        hull =
-            Math.max(
-                0,
-                hull
-            );
+        hull = Math.max(0, hull - overheatDamage);
 
         pressure = 0;
 
         logMessage(
-            "OVERHEAT: 15 HULL DAMAGE."
+            "OVERHEAT: " + overheatDamage + " HULL DAMAGE."
         );
 
-        floatNumber("playerPanel", "-15 OVERHEAT", "dmg");
+        floatNumber("playerPanel", "-" + overheatDamage + " OVERHEAT", "dmg");
         playAnimation("playerPanel", "shake");
         flashScreen("red");
         vibrate(250);
@@ -1440,12 +1520,8 @@ function vent() {
         amount = 40;
     }
 
-    if (hasEcho("STEAM VALVE")) {
-        amount += 10;
-    }
-
     if (hasEcho("VOID VALVE")) {
-        amount = 45;
+        amount = Math.max(amount, 45);
     }
 
     pressure =
@@ -1473,6 +1549,20 @@ function vent() {
         " PRESSURE RELEASED."
     );
 
+    if (hasEcho("STEAM VALVE")) {
+
+        ventClockBonus = Math.min(8, ventClockBonus + 4);
+
+        logMessage("STEAM VALVE: +" + ventClockBonus + " CLOCK POWER THIS HAND.");
+    }
+
+    if (hasEcho("STEAM BROKER")) {
+
+        cogs += 2;
+
+        logMessage("STEAM BROKER: +2 COGS.");
+    }
+
     floatNumber("playerPanel", "-" + amount + " PRESSURE", "vent");
     vibrate(25);
 
@@ -1498,17 +1588,22 @@ function defeatEnemy() {
 
     defeatedEnemies++;
 
-    lootReward =
-        8 +
-        (getTier() * 4);
+    lootReward = Math.round(
+        (8 + (getTier() * 4)) *
+        (enemy.lootMultiplier || 1)
+    );
 
     cogs += lootReward;
 
-    if (REPAIR_AFTER_KILL > 0 && hull > 0) {
+    const repairAmount =
+        (enemy.repair || 10) +
+        (hasEcho("SALVAGE ENGINE") ? 10 : 0);
+
+    if (repairAmount > 0 && hull > 0) {
 
         const before = hull;
 
-        hull = Math.min(maxHull, hull + REPAIR_AFTER_KILL);
+        hull = Math.min(maxHull, hull + repairAmount);
 
         if (hull > before) {
             logMessage("HULL REPAIRED: +" + (hull - before) + ".");
@@ -1528,7 +1623,12 @@ function defeatEnemy() {
     );
 
     workshopPending =
+        enemy.type === "BOSS" ||
         defeatedEnemies % 3 === 0;
+
+    if (enemy.type === "BOSS") {
+        freePicks = 1;
+    }
 
     onEnemyDefeated();
 
@@ -1657,14 +1757,15 @@ function generateShop() {
     const available =
         shuffle(
             ECHOES.filter(function (echo) {
-                return !hasEcho(echo.name);
+                return !hasEcho(echo.name) &&
+                    (freePicks <= 0 || echo.rarity !== "WORN");
             })
         ).slice(0, 4);
 
     for (const echo of available) {
 
         const price =
-            getPrice(echo);
+            freePicks > 0 ? 0 : getPrice(echo);
 
         const item =
             document.createElement("div");
@@ -1687,9 +1788,10 @@ function generateShop() {
 
             "<button class=\"small-button\">" +
             (
-                equippedEchoes.length >= 3
-                    ? "SELECT"
-                    : "BUY " + price + " COGS"
+                price === 0
+                    ? "TAKE - FREE"
+                    : (equippedEchoes.length >= 3 ? "REPLACE - " : "BUY - ") +
+                      price + " COGS"
             ) +
             "</button>";
 
@@ -1751,6 +1853,10 @@ function buyEcho(name, price) {
     if (equippedEchoes.length < 3) {
 
         cogs -= price;
+
+        if (price === 0) {
+            freePicks = 0;
+        }
 
         equippedEchoes.push(echo);
 
@@ -1877,6 +1983,10 @@ function replaceEcho(index) {
         equippedEchoes[index];
 
     cogs -= price;
+
+    if (price === 0) {
+        freePicks = 0;
+    }
 
     equippedEchoes[index] =
         newEcho;
@@ -2162,9 +2272,17 @@ function render() {
             (
                 roman[current - 1] ||
                 current
-            );
+            ) +
+            (enemy ? " - " + enemy.type : "");
     }
 
+
+    const panel = getElement("enemyPanel");
+
+    if (panel) {
+        panel.classList.toggle("elite", !!enemy && enemy.type === "ELITE");
+        panel.classList.toggle("boss", !!enemy && enemy.type === "BOSS");
+    }
 
     renderEchoes();
     renderCards();
@@ -2624,6 +2742,9 @@ let menuView = "main";
 let betweenEncounters = false;
 let workshopOpen = false;
 let runOver = false;
+let freePicks = 0;
+let aegisUsed = false;
+let ventClockBonus = 0;
 let runStartBest = 0;
 
 
@@ -2819,6 +2940,7 @@ function saveRun() {
         cycle: cycle,
         between: betweenEncounters,
         workshop: workshopPending || workshopOpen,
+        free: freePicks,
         cogs: cogs,
         hull: hull,
         defeated: defeatedEnemies,
@@ -2839,6 +2961,18 @@ function onEnemyDefeated() {
     if (profile) {
         profile.stats.kills++;
         profile.stats.cogsEarned += lootReward;
+    }
+
+    const lootMessage = getElement("lootMessage");
+
+    if (lootMessage && enemy) {
+
+        lootMessage.textContent =
+            enemy.type === "BOSS"
+                ? "A BOSS HAS FALLEN. A FREE ECHO AWAITS IN THE WORKSHOP."
+                : enemy.type === "ELITE"
+                    ? "AN ELITE MACHINE HAS BEEN SILENCED. EXTRA LOOT."
+                    : "THE MACHINE HAS BEEN SILENCED.";
     }
 
     betweenEncounters = true;
@@ -2940,6 +3074,7 @@ function continueRun() {
     logMessage("RUN RESTORED. CYCLE " + cycle + ".");
 
     betweenEncounters = !!saved.between;
+    freePicks = Math.max(0, Math.floor(Number(saved.free)) || 0);
 
     if (saved.between) {
 

@@ -11,7 +11,8 @@
 
     <link rel="manifest" href="./manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="./icon-192.png">
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -98,6 +99,10 @@
         </header>
 
 
+        <div class="game-layout">
+
+        <aside class="sidebar">
+
         <!-- PLAYER STATUS -->
         <section id="playerPanel" class="panel player-panel">
 
@@ -168,6 +173,10 @@
 
         </section>
 
+
+        </aside>
+
+        <div class="main-col">
 
         <!-- ENEMY -->
         <section id="enemyPanel" class="panel enemy-panel">
@@ -273,6 +282,10 @@
 
         </section>
 
+        </div>
+
+        </div>
+
     </main>
 
 
@@ -291,7 +304,7 @@
                 ENEMY DESTROYED
             </h2>
 
-            <p class="loot-message">
+            <p id="lootMessage" class="loot-message">
                 THE MACHINE HAS BEEN SILENCED.
             </p>
 
