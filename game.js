@@ -654,11 +654,14 @@ function newEncounter() {
         "."
     );
 
-    logMessage(
-        "SYSTEM: " +
-        enemy.ability +
-        "."
-    );
+    if (enemy.ability !== "NONE") {
+
+        logMessage(
+            "ENEMY ABILITY: " +
+            enemy.ability +
+            "."
+        );
+    }
 
     dealHand();
 
@@ -766,15 +769,21 @@ function buildCardElement(card) {
         CLUBS: "♣"
     };
 
+    const symbol = symbols[card.suit];
+
     const red =
         card.suit === "HEARTS" ||
         card.suit === "DIAMONDS";
 
     element.className = red ? "card red" : "card";
 
+    const corner =
+        "<b>" + card.rank + "</b><i>" + symbol + "</i>";
+
     element.innerHTML =
-        "<span>" + card.rank + "</span>" +
-        "<small>" + symbols[card.suit] + "</small>";
+        "<div class=\"corner tl\">" + corner + "</div>" +
+        "<div class=\"pip\">" + symbol + "</div>" +
+        "<div class=\"corner br\">" + corner + "</div>";
 
     return element;
 }
@@ -1354,7 +1363,11 @@ function flatDamageEnemy(amount, source) {
 }
 
 
-function playerHitsEnemy() {
+function calcPlayerDamage() {
+
+    if (!enemy) {
+        return 0;
+    }
 
     let damage = Math.floor(
         baseTorque * (10 + clockPower) / 10
@@ -1383,6 +1396,38 @@ function playerHitsEnemy() {
     if (doubled) {
         damage *= 2;
     }
+
+    return damage;
+}
+
+
+function calcEnemyDamage() {
+
+    if (!enemy) {
+        return 0;
+    }
+
+    let damage = enemy.attack;
+
+    if (hasEcho("COUNTERWEIGHT")) {
+        damage -= 2;
+    }
+
+    if (hasEcho("GLASS PISTON")) {
+        damage += 3;
+    }
+
+    if (doubled && !hasEcho("DOUBLE CRANK")) {
+        damage *= 2;
+    }
+
+    return Math.max(1, damage);
+}
+
+
+function playerHitsEnemy() {
+
+    const damage = calcPlayerDamage();
 
     enemy.hull = Math.max(0, enemy.hull - damage);
 
@@ -1420,15 +1465,7 @@ function enemyHitsPlayer() {
         return;
     }
 
-    let damage = enemy.attack;
-
-    if (hasEcho("COUNTERWEIGHT")) {
-        damage -= 2;
-    }
-
-    if (hasEcho("GLASS PISTON")) {
-        damage += 3;
-    }
+    const damage = calcEnemyDamage();
 
     if (enemy.ability === "PRESSURE") {
         pressure += 5;
@@ -1437,12 +1474,6 @@ function enemyHitsPlayer() {
     if (enemy.ability === "HEAT") {
         pressure += 8;
     }
-
-    if (doubled && !hasEcho("DOUBLE CRANK")) {
-        damage *= 2;
-    }
-
-    damage = Math.max(1, damage);
 
     hull = Math.max(0, hull - damage);
 
@@ -1745,8 +1776,7 @@ function closeWorkshop() {
 
 function generateShop() {
 
-    const container =
-        getElement("shopItems");
+    const container = getElement("shopItems");
 
     if (!container) {
         return;
@@ -1764,49 +1794,39 @@ function generateShop() {
 
     for (const echo of available) {
 
-        const price =
-            freePicks > 0 ? 0 : getPrice(echo);
+        const price = freePicks > 0 ? 0 : getPrice(echo);
 
-        const item =
-            document.createElement("div");
+        const item = document.createElement("div");
 
         item.className =
-            "shop-item";
+            "shop-item rarity-" + echo.rarity.toLowerCase();
+
+        const label =
+            price === 0
+                ? "TAKE - FREE"
+                : (equippedEchoes.length >= 3 ? "REPLACE - " : "BUY - ") +
+                  price + " COGS";
 
         item.innerHTML =
-            "<div class=\"shop-item-name\">" +
-            echo.name +
+            "<div class=\"shop-item-head\">" +
+            "<div class=\"echo-icon\">" + echoIcon(echo.name) + "</div>" +
+            "<div>" +
+            "<div class=\"shop-item-name\">" + echo.name + "</div>" +
+            "<div class=\"shop-item-rarity\">" + echo.rarity + "</div>" +
             "</div>" +
-
-            "<div class=\"shop-item-rarity\">" +
-            echo.rarity +
             "</div>" +
+            "<div class=\"shop-item-description\">" + echo.description + "</div>" +
+            "<button class=\"small-button\">" + label + "</button>";
 
-            "<div class=\"shop-item-description\">" +
-            echo.description +
-            "</div>" +
+        const button = item.querySelector("button");
 
-            "<button class=\"small-button\">" +
-            (
-                price === 0
-                    ? "TAKE - FREE"
-                    : (equippedEchoes.length >= 3 ? "REPLACE - " : "BUY - ") +
-                      price + " COGS"
-            ) +
-            "</button>";
+        if (price > cogs) {
+            button.disabled = true;
+        }
 
-        const button =
-            item.querySelector("button");
-
-        button.addEventListener(
-            "click",
-            function () {
-                buyEcho(
-                    echo.name,
-                    price
-                );
-            }
-        );
+        button.addEventListener("click", function () {
+            buyEcho(echo.name, price);
+        });
 
         container.appendChild(item);
     }
@@ -1815,9 +1835,7 @@ function generateShop() {
 
         container.innerHTML =
             "<div class=\"shop-item\">" +
-            "<div class=\"shop-item-name\">" +
-            "NO ECHOES AVAILABLE" +
-            "</div>" +
+            "<div class=\"shop-item-name\">NO ECHOES AVAILABLE</div>" +
             "</div>";
     }
 }
@@ -2026,10 +2044,7 @@ function continueAfterWorkshop() {
 
 function renderEchoes() {
 
-    const container =
-        getElement(
-            "equippedEchoes"
-        );
+    const container = getElement("equippedEchoes");
 
     if (!container) {
         return;
@@ -2039,46 +2054,41 @@ function renderEchoes() {
 
     for (let i = 0; i < 3; i++) {
 
-        const slot =
-            document.createElement("div");
+        const slot = document.createElement("div");
 
         if (equippedEchoes[i]) {
 
-            const echo =
-                equippedEchoes[i];
+            const echo = equippedEchoes[i];
 
             slot.className =
-                "echo-slot";
+                "echo-slot rarity-" + echo.rarity.toLowerCase();
+
+            slot.setAttribute("data-echo", echo.name);
+            slot.setAttribute("tabindex", "0");
 
             slot.innerHTML =
-                "<strong>" +
-                echo.name +
-                "</strong>" +
-
-                "<small>" +
-                echo.rarity +
-                "</small>";
+                "<div class=\"echo-icon\">" + echoIcon(echo.name) + "</div>" +
+                "<div class=\"echo-text\">" +
+                "<strong>" + echo.name + "</strong>" +
+                "<small>" + echo.rarity + "</small>" +
+                "</div>";
         }
         else {
 
-            slot.className =
-                "echo-slot empty";
+            slot.className = "echo-slot empty";
 
-            slot.textContent =
-                "SLOT " +
-                (i + 1) +
-                " — EMPTY";
+            slot.innerHTML =
+                "<span class=\"slot-plus\">+</span>" +
+                "<span>EMPTY SLOT</span>";
         }
 
         container.appendChild(slot);
     }
 
-    const count =
-        getElement("echoCount");
+    const count = getElement("echoCount");
 
     if (count) {
-        count.textContent =
-            equippedEchoes.length;
+        count.textContent = equippedEchoes.length;
     }
 }
 
@@ -2286,6 +2296,7 @@ function render() {
 
     renderEchoes();
     renderCards();
+    renderExtras();
 
     updateActionButtons();
 }
@@ -2384,6 +2395,8 @@ function returnToMenu() {
 
     resetState();
 
+    closeAllOverlays();
+
     getElement("gameOverModal").classList.add("hidden");
     getElement("lootModal").classList.add("hidden");
     getElement("workshopModal").classList.add("hidden");
@@ -2404,7 +2417,7 @@ function returnToMenu() {
    ========================= */
 
 const MUSIC_FILE = "./assets/music/theme.mp3";
-const MUSIC_VOLUME = 0.35;
+let musicVolume = 0.35;
 const MUSIC_STORAGE_KEY = "corvaliMusic";
 
 let music = null;
@@ -2448,7 +2461,7 @@ function initMusic() {
     music = new Audio(MUSIC_FILE);
 
     music.loop = false;
-    music.volume = MUSIC_VOLUME;
+    music.volume = musicVolume;
     music.preload = "auto";
 
     /* The track ends with a fade-out, so instead of a hard loop
@@ -2484,8 +2497,8 @@ function fadeMusicIn() {
         step++;
 
         music.volume = Math.min(
-            MUSIC_VOLUME,
-            MUSIC_VOLUME * step / steps
+            musicVolume,
+            musicVolume * step / steps
         );
 
         if (step >= steps) {
@@ -2654,7 +2667,7 @@ function updateVibrationButton() {
     }
 
     if (!vibrationSupported()) {
-        button.style.display = "none";
+        (button.parentNode || button).style.display = "none";
         return;
     }
 
@@ -3204,6 +3217,10 @@ function renderMenu() {
     );
 
     root.appendChild(
+        makeButton("HOW TO PLAY", "secondary-button", openHelp)
+    );
+
+    root.appendChild(
         makeButton(
             "SWITCH PROFILE",
             "secondary-button",
@@ -3318,6 +3335,940 @@ function registerServiceWorker() {
 
 
 /* =========================
+   UI EXTRAS
+   icons, portraits, gauge, tooltips, help, pause menu, shortcuts
+   ========================= */
+
+function escapeHtml(text) {
+
+    return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
+
+function buildGearIcon() {
+
+    const teeth = 8;
+
+    let d = "";
+
+    for (let i = 0; i < teeth; i++) {
+
+        const base = (i * 360) / teeth;
+
+        [[-13, 7.4], [-8, 10.6], [8, 10.6], [13, 7.4]].forEach(
+            function (point, index) {
+
+                const angle = (base + point[0]) * Math.PI / 180;
+
+                const x = 12 + point[1] * Math.sin(angle);
+                const y = 12 - point[1] * Math.cos(angle);
+
+                d += (i === 0 && index === 0 ? "M" : "L") +
+                    x.toFixed(2) + " " + y.toFixed(2);
+            }
+        );
+    }
+
+    d += "Z M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z";
+
+    return "<path fill-rule=\"evenodd\" d=\"" + d + "\"/>";
+}
+
+
+const ICON_SHAPES = {
+
+    gear: buildGearIcon(),
+
+    heart: "<path d=\"M12 21s-7.5-4.6-9.5-9.2C1.2 8.5 3 5 6.5 5c2 0 3.6 1.1 5.5 3 1.9-1.9 3.5-3 5.5-3 3.5 0 5.3 3.5 4 6.8C19.5 16.4 12 21 12 21z\"/>",
+
+    clock: "<path fill-rule=\"evenodd\" d=\"M12 2a10 10 0 1 0 0 20a10 10 0 0 0 0-20zm0 2.2a7.8 7.8 0 1 1 0 15.6a7.8 7.8 0 0 1 0-15.6zM11 7v5.4l4 2.3l1-1.7l-3-1.7V7z\"/>",
+
+    valve: "<path fill-rule=\"evenodd\" d=\"M10.5 2h3v3.2h4v2h-11v-2h4zM12 8.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13zm0 2.4a4.1 4.1 0 1 1 0 8.2a4.1 4.1 0 0 1 0-8.2z\"/>",
+
+    bolt: "<path d=\"M13.5 2L4.5 13.5h6L9.5 22l10-12.5h-6.5z\"/>",
+
+    shield: "<path fill-rule=\"evenodd\" d=\"M12 2l8.5 3v6.2c0 5-3.6 8.9-8.5 10.8c-4.9-1.9-8.5-5.800-8.5-10.800V5zM12 4.3L5.7 6.5v4.7c0 3.8 2.6 6.9 6.3 8.6z\"/>",
+
+    eye: "<path fill-rule=\"evenodd\" d=\"M12 5C6.5 5 2.7 9.6 1.5 12c1.2 2.4 5 7 10.5 7s9.3-4.6 10.5-7C21.300 9.600 17.500 5 12 5zm0 2.200a4.800 4.800 0 1 1 0 9.600a4.800 4.800 0 0 1 0-9.600zm0 2.400a2.400 2.400 0 1 0 0 4.800a2.400 2.400 0 0 0 0-4.800z\"/>",
+
+    hammer: "<g transform=\"rotate(45 12 12)\"><rect x=\"3\" y=\"3.5\" width=\"18\" height=\"6\" rx=\"1.2\"/><rect x=\"10.2\" y=\"9\" width=\"3.6\" height=\"13\" rx=\"1\"/></g>",
+
+    coin: "<path fill-rule=\"evenodd\" d=\"M12 2a10 10 0 1 0 0 20a10 10 0 0 0 0-20zm0 3a7 7 0 1 1 0 14a7 7 0 0 1 0-14z\"/><circle cx=\"12\" cy=\"12\" r=\"3.2\"/>",
+
+    flame: "<path d=\"M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 1.500-4.500 2.800-6C10 6.500 11.500 5 12 2z\"/>",
+
+    drop: "<path d=\"M12 2.500S5 10 5 15a7 7 0 0 0 14 0c0-5-7-12.500-7-12.500z\"/>",
+
+    star: "<path d=\"M12 2l2.400 7.600L22 12l-7.600 2.400L12 22l-2.400-7.600L2 12l7.600-2.400z\"/>"
+};
+
+
+const ECHO_ICON_KEYS = {
+    "CLOCKMAKER": "clock", "BRASS HEART": "heart", "PRESSURE VALVE": "valve",
+    "STEAM CORE": "gear", "BROKEN GEAR": "gear", "AUTOMATON": "gear",
+    "BRASS LUNG": "drop", "OLD SPRING": "clock", "PERFECT GEAR": "gear",
+    "HIGH PRESSURE PISTON": "bolt", "COOLING COIL": "drop", "STEAM VALVE": "valve",
+    "CHRONO CORE": "clock", "RUSTED HEART": "heart", "BRASS EYE": "eye",
+    "OVERDRIVE": "bolt", "COUNTERWEIGHT": "shield", "TIME SPRING": "clock",
+    "BLACK GEAR": "gear", "PRESSURE CHAMBER": "valve", "MECHANICAL HEART": "heart",
+    "LOST ESCAPEMENT": "clock", "GOLDEN PISTON": "bolt", "CORVALI LENS": "eye",
+    "AEON GEAR": "clock", "INFINITE SPRING": "clock", "VOID VALVE": "valve",
+    "MASTER CLOCK": "clock", "THE FIRST GEAR": "gear", "CORVALI ECHO": "star",
+    "SPARE PARTS": "coin", "SALVAGE ENGINE": "gear", "STEAM BROKER": "coin",
+    "IRON LUNG": "drop", "GLASS PISTON": "bolt", "TICKING BOMB": "flame",
+    "BRASS PERISCOPE": "eye", "LAST STAND": "flame", "DOUBLE CRANK": "gear",
+    "AEGIS GEAR": "shield", "TITAN HAMMER": "hammer", "STEEL NERVES": "shield"
+};
+
+
+function echoIcon(name) {
+
+    const key = ECHO_ICON_KEYS[name] || "gear";
+
+    return "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\">" +
+        ICON_SHAPES[key] + "</svg>";
+}
+
+
+/* ---------- enemy portraits ---------- */
+
+const ABILITY_EYES = {
+    NONE: "#f2c14e", PRESSURE: "#6fd3ff", HEAT: "#ff7a2f",
+    FORTRESS: "#9fb4c7", BUST: "#e04a3f", TIME: "#7ee0a1",
+    "HEAVY ARMOR": "#c8c8c8", OVERHEAT: "#ff4d2d", REPAIR: "#66e08a",
+    OVERCLOCK: "#ff3b30"
+};
+
+const ABILITY_INFO = {
+    NONE: "A plain machine with no special ability.",
+    PRESSURE: "Each time it hits you, your Pressure rises by 5.",
+    HEAT: "Each time it hits you, your Pressure rises by 8."
+};
+
+let lastPortraitKey = "";
+
+
+function enemyPortraitSVG(type, ability) {
+
+    const eye = ABILITY_EYES[ability] || "#f2c14e";
+
+    const defs =
+        "<defs><linearGradient id=\"pg\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">" +
+        "<stop offset=\"0\" stop-color=\"#c9973f\"/>" +
+        "<stop offset=\"1\" stop-color=\"#5a3d18\"/>" +
+        "</linearGradient></defs>";
+
+    if (type === "BOSS") {
+
+        return "<svg viewBox=\"0 0 100 100\" aria-hidden=\"true\">" + defs +
+            "<rect x=\"28\" y=\"6\" width=\"10\" height=\"24\" fill=\"#2a1a0a\"/>" +
+            "<rect x=\"26\" y=\"4\" width=\"14\" height=\"5\" fill=\"#6f4f1e\"/>" +
+            "<path d=\"M16 42L26 18l13 16 11-24 11 24 13-16 10 24z\" fill=\"#c9973f\" stroke=\"#1a0f06\" stroke-width=\"3\" stroke-linejoin=\"round\"/>" +
+            "<rect x=\"12\" y=\"40\" width=\"76\" height=\"50\" rx=\"10\" fill=\"url(#pg)\" stroke=\"#1a0f06\" stroke-width=\"3\"/>" +
+            "<circle cx=\"50\" cy=\"64\" r=\"16\" fill=\"#0e0805\" stroke=\"#1a0f06\" stroke-width=\"3\"/>" +
+            "<circle class=\"eye\" cx=\"50\" cy=\"64\" r=\"12\" fill=\"" + eye + "\"/>" +
+            "<circle cx=\"50\" cy=\"64\" r=\"5\" fill=\"#000\"/>" +
+            "<circle cx=\"24\" cy=\"54\" r=\"3.5\" fill=\"#efc872\"/><circle cx=\"76\" cy=\"54\" r=\"3.5\" fill=\"#efc872\"/>" +
+            "<circle cx=\"24\" cy=\"78\" r=\"3.5\" fill=\"#efc872\"/><circle cx=\"76\" cy=\"78\" r=\"3.5\" fill=\"#efc872\"/>" +
+            "</svg>";
+    }
+
+    if (type === "ELITE") {
+
+        return "<svg viewBox=\"0 0 100 100\" aria-hidden=\"true\">" + defs +
+            "<path d=\"M18 36L8 22M82 36l10-14\" stroke=\"#efc872\" stroke-width=\"3\" stroke-linecap=\"round\"/>" +
+            "<circle cx=\"8\" cy=\"22\" r=\"3.5\" fill=\"#efc872\"/><circle cx=\"92\" cy=\"22\" r=\"3.5\" fill=\"#efc872\"/>" +
+            "<polygon points=\"50,10 83,29 83,69 50,90 17,69 17,29\" fill=\"url(#pg)\" stroke=\"#1a0f06\" stroke-width=\"3\"/>" +
+            "<polygon points=\"50,19 75,33 75,65 50,80 25,65 25,33\" fill=\"none\" stroke=\"#efc872\" stroke-width=\"1.5\"/>" +
+            "<rect x=\"28\" y=\"40\" width=\"44\" height=\"16\" rx=\"4\" fill=\"#0e0805\"/>" +
+            "<circle class=\"eye\" cx=\"38\" cy=\"48\" r=\"5\" fill=\"" + eye + "\"/>" +
+            "<circle class=\"eye\" cx=\"62\" cy=\"48\" r=\"5\" fill=\"" + eye + "\"/>" +
+            "<circle class=\"eye\" cx=\"50\" cy=\"48\" r=\"3\" fill=\"" + eye + "\"/>" +
+            "<path d=\"M38 68h24M42 73h16\" stroke=\"#1a0f06\" stroke-width=\"3\" stroke-linecap=\"round\"/>" +
+            "</svg>";
+    }
+
+    return "<svg viewBox=\"0 0 100 100\" aria-hidden=\"true\">" + defs +
+        "<line x1=\"50\" y1=\"14\" x2=\"50\" y2=\"26\" stroke=\"#2a1a0a\" stroke-width=\"3\"/>" +
+        "<circle class=\"eye\" cx=\"50\" cy=\"12\" r=\"4\" fill=\"" + eye + "\"/>" +
+        "<circle cx=\"50\" cy=\"54\" r=\"32\" fill=\"url(#pg)\" stroke=\"#1a0f06\" stroke-width=\"3\"/>" +
+        "<circle cx=\"50\" cy=\"54\" r=\"26\" fill=\"none\" stroke=\"#efc872\" stroke-width=\"1\" stroke-dasharray=\"2 4\" opacity=\".6\"/>" +
+        "<rect x=\"26\" y=\"42\" width=\"48\" height=\"20\" rx=\"10\" fill=\"#0e0805\" stroke=\"#1a0f06\" stroke-width=\"2\"/>" +
+        "<circle class=\"eye\" cx=\"39\" cy=\"52\" r=\"6\" fill=\"" + eye + "\"/>" +
+        "<circle class=\"eye\" cx=\"61\" cy=\"52\" r=\"6\" fill=\"" + eye + "\"/>" +
+        "<circle cx=\"39\" cy=\"52\" r=\"2.2\" fill=\"#000\"/><circle cx=\"61\" cy=\"52\" r=\"2.2\" fill=\"#000\"/>" +
+        "<rect x=\"38\" y=\"70\" width=\"24\" height=\"7\" rx=\"2\" fill=\"#1a0f06\"/>" +
+        "<path d=\"M44 70v7M50 70v7M56 70v7\" stroke=\"#6f4f1e\" stroke-width=\"1.5\"/>" +
+        "<circle cx=\"21\" cy=\"54\" r=\"4\" fill=\"#7a5a22\"/><circle cx=\"79\" cy=\"54\" r=\"4\" fill=\"#7a5a22\"/>" +
+        "</svg>";
+}
+
+
+function renderExtras() {
+
+    /* pressure gauge */
+    const limit = hasEcho("PRESSURE CHAMBER") ? 120 : 100;
+
+    const fraction = Math.max(0, Math.min(1, pressure / limit));
+
+    const needle = getElement("gaugeNeedle");
+
+    if (needle) {
+        needle.style.transform =
+            "rotate(" + (-90 + 180 * fraction) + "deg)";
+    }
+
+    const gauge = getElement("gauge");
+
+    if (gauge) {
+        gauge.classList.toggle("danger", fraction >= 0.8);
+    }
+
+    /* enemy portrait + ability tooltip */
+    if (enemy) {
+
+        const key = enemy.name + "|" + enemy.type;
+
+        const portrait = getElement("enemyPortrait");
+
+        if (portrait && key !== lastPortraitKey) {
+
+            portrait.innerHTML =
+                enemyPortraitSVG(enemy.type, enemy.ability);
+
+            lastPortraitKey = key;
+        }
+
+        const box = getElement("enemyAbilityBox");
+
+        if (box) {
+
+            box.setAttribute(
+                "data-tip",
+                enemy.ability + "|" +
+                (ABILITY_INFO[enemy.ability] ||
+                    "A special trait of this machine. Its effect is still being calibrated.")
+            );
+        }
+    }
+
+    /* damage preview */
+    const win = getElement("previewWin");
+    const lose = getElement("previewLose");
+
+    if (win && lose) {
+
+        if (!enemy || !combatStarted || hand.length === 0) {
+
+            win.textContent = "";
+            lose.textContent = "";
+        }
+        else if (bust) {
+
+            win.textContent = "BUST";
+            lose.textContent = "YOU TAKE " + calcEnemyDamage();
+        }
+        else {
+
+            win.textContent = "IF YOU WIN: " + calcPlayerDamage() + " DMG";
+
+            lose.textContent =
+                hasEcho("AEGIS GEAR") && !aegisUsed
+                    ? "IF YOU LOSE: BLOCKED"
+                    : "IF YOU LOSE: " + calcEnemyDamage() + " DMG";
+        }
+    }
+
+    /* workshop cogs */
+    const workshopCogs = getElement("workshopCogs");
+
+    if (workshopCogs) {
+        workshopCogs.textContent = cogs;
+    }
+}
+
+
+/* ---------- tooltips ---------- */
+
+let tipTarget = null;
+let tipTimer = null;
+
+
+function buildTip(target) {
+
+    const echoName = target.getAttribute("data-echo");
+
+    if (echoName) {
+
+        const echo = getEcho(echoName);
+
+        if (!echo) {
+            return "";
+        }
+
+        return "<b>" + echo.name + "</b>" +
+            "<div class=\"tip-rarity rarity-" + echo.rarity.toLowerCase() + "\">" +
+            echo.rarity + "</div>" +
+            "<div>" + echo.description + "</div>";
+    }
+
+    const raw = target.getAttribute("data-tip");
+
+    if (!raw) {
+        return "";
+    }
+
+    const parts = raw.split("|");
+
+    return parts.length > 1
+        ? "<b>" + escapeHtml(parts[0]) + "</b>" + escapeHtml(parts.slice(1).join("|"))
+        : escapeHtml(raw);
+}
+
+
+function positionTip(target) {
+
+    const tooltip = getElement("tooltip");
+
+    const box = target.getBoundingClientRect();
+    const tip = tooltip.getBoundingClientRect();
+
+    let x = box.left + box.width / 2 - tip.width / 2;
+
+    x = Math.max(8, Math.min(window.innerWidth - tip.width - 8, x));
+
+    let y = box.top - tip.height - 10;
+
+    if (y < 8) {
+        y = box.bottom + 10;
+    }
+
+    tooltip.style.left = x + "px";
+    tooltip.style.top = y + "px";
+}
+
+
+function showTip(target) {
+
+    const html = buildTip(target);
+
+    if (!html) {
+        return;
+    }
+
+    const tooltip = getElement("tooltip");
+
+    tooltip.innerHTML = html;
+
+    tooltip.classList.add("visible");
+
+    positionTip(target);
+
+    tipTarget = target;
+}
+
+
+function hideTip() {
+
+    const tooltip = getElement("tooltip");
+
+    if (tooltip) {
+        tooltip.classList.remove("visible");
+    }
+
+    tipTarget = null;
+
+    clearTimeout(tipTimer);
+}
+
+
+function initTooltips() {
+
+    const selector = "[data-echo], [data-tip]";
+
+    const touchMode =
+        typeof window !== "undefined" &&
+        window.matchMedia &&
+        window.matchMedia("(hover: none)").matches;
+
+    if (touchMode) {
+
+        document.addEventListener("click", function (event) {
+
+            const target = event.target.closest(selector);
+
+            if (!target || target.closest("button")) {
+                hideTip();
+                return;
+            }
+
+            if (target === tipTarget) {
+                hideTip();
+                return;
+            }
+
+            showTip(target);
+
+            clearTimeout(tipTimer);
+
+            tipTimer = setTimeout(hideTip, 4500);
+        });
+
+        return;
+    }
+
+    document.addEventListener("mouseover", function (event) {
+
+        const target = event.target.closest(selector);
+
+        if (target && target !== tipTarget) {
+            showTip(target);
+        }
+    });
+
+    document.addEventListener("mouseout", function (event) {
+
+        if (tipTarget && !tipTarget.contains(event.relatedTarget)) {
+            hideTip();
+        }
+    });
+
+    document.addEventListener("focusin", function (event) {
+
+        const target = event.target.closest(selector);
+
+        if (target) {
+            showTip(target);
+        }
+    });
+
+    document.addEventListener("focusout", hideTip);
+
+    document.addEventListener("click", function (event) {
+
+        if (event.target.closest("button")) {
+            hideTip();
+        }
+    });
+
+    window.addEventListener("scroll", hideTip, true);
+}
+
+
+/* ---------- help + codex ---------- */
+
+const HELP_TABS = ["BASICS", "STATS", "ENEMIES", "ECHOES"];
+
+let helpTab = "BASICS";
+let codexFilter = "ALL";
+
+
+function helpHtml(tab) {
+
+    if (tab === "BASICS") {
+
+        return "<h3>THE DUEL</h3>" +
+            "<p>Every cycle is a Blackjack duel against a machine. You and the enemy each get two cards, and one of the enemy's cards stays hidden.</p>" +
+            "<h3>YOUR TURN</h3>" +
+            "<p><b>HIT</b> draws a card. <b>STAND</b> keeps your hand: the enemy reveals its card and draws until it reaches 17. <b>DOUBLE</b> (first two cards only) draws one card and stands, doubling the damage dealt and taken. <b>VENT</b> releases Pressure for free.</p>" +
+            "<h3>WINNING A ROUND</h3>" +
+            "<p>The higher total (21 max) wins. <b>If you win, you hit the enemy. If you lose or bust, the enemy hits you.</b> A tie is a push: nobody takes damage. A natural Blackjack (Ace + a 10-value card) beats any other hand.</p>" +
+            "<h3>THE RUN</h3>" +
+            "<p>Destroy machines to earn Cogs. Every 3rd kill opens the Workshop, where you can buy Echoes (3 equipped at most). Bosses always open it and give you one Echo for free. If your Hull reaches 0 the run ends; your best cycle is saved on your profile.</p>" +
+            "<h3>KEYBOARD SHORTCUTS</h3>" +
+            "<p><kbd>H</kbd> Hit &nbsp; <kbd>S</kbd> Stand &nbsp; <kbd>D</kbd> Double &nbsp; <kbd>V</kbd> Vent &nbsp; <kbd>M</kbd> Music &nbsp; <kbd>?</kbd> Help &nbsp; <kbd>Esc</kbd> Menu</p>" +
+            "<h3>TIP</h3>" +
+            "<p>Hover (or tap) stats, enemy values, buttons and Echoes to see what they do. The two chips above your cards show the damage you would deal or take right now.</p>";
+    }
+
+    if (tab === "STATS") {
+
+        return "<h3>HULL</h3><p>Your health. At 0 the run is over. Destroying enemies repairs some Hull, and so do certain Echoes.</p>" +
+            "<h3>PRESSURE</h3><p>HIT adds 5, DOUBLE adds 10, a bust adds 20. Above the limit (100, or 120 with Pressure Chamber) the engine overheats: you lose Hull and Pressure resets. VENT releases 30.</p>" +
+            "<h3>BASE TORQUE &amp; CLOCK POWER</h3>" +
+            "<p>Base Torque is your hand value plus Echo bonuses. Clock Power is a multiplier that grows with strong hands:</p>" +
+            "<table class=\"help-table\"><tr><th>HAND</th><th>CLOCK POWER</th></tr>" +
+            "<tr><td>17 or less</td><td>+0</td></tr><tr><td>18</td><td>+3</td></tr><tr><td>19</td><td>+5</td></tr><tr><td>20</td><td>+8</td></tr><tr><td>21</td><td>+12</td></tr>" +
+            "<tr><td>Natural Blackjack</td><td>25 Torque, +15 Clock Power</td></tr></table>" +
+            "<h3>DAMAGE</h3>" +
+            "<span class=\"formula\">damage = Torque x (1 + Clock Power / 10) - enemy Armor</span>" +
+            "<p>Minimum 1 damage. DOUBLE doubles it, in both directions.</p>";
+    }
+
+    if (tab === "ENEMIES") {
+
+        const rows = ["COMMON", "ELITE", "BOSS"].map(function (key) {
+
+            const type = ENEMY_TYPES[key];
+
+            return "<tr><td><b>" + key + "</b></td><td>" + type.attack +
+                "</td><td>" + type.armor + "</td><td>" + type.hull +
+                "</td><td>x" + type.loot + "</td><td>+" + type.repair + "</td></tr>";
+        }).join("");
+
+        return "<h3>THREE KINDS OF MACHINES</h3>" +
+            "<p>Most fights are against common machines. Every 5th enemy is an <b>Elite</b> and every 10th is a <b>Boss</b>.</p>" +
+            "<table class=\"help-table\"><tr><th>TYPE</th><th>ATTACK</th><th>ARMOR</th><th>HULL</th><th>LOOT</th><th>REPAIR</th></tr>" +
+            rows + "</table>" +
+            "<p>Values shown are for Tier I. Every 10 cycles a new tier begins: enemies gain +2 Attack, +1 Armor and 25% more Hull.</p>" +
+            "<h3>BOSS REWARD</h3>" +
+            "<p>A fallen Boss opens the Workshop and lets you take one Echo (Forged or better) for free.</p>";
+    }
+
+    return "<h3>RARITY</h3>" +
+        "<p><b>WORN</b> 10 cogs, <b>FORGED</b> 18, <b>ENGINEERED</b> 28, <b>RELIC</b> 45. You can equip three at a time and swap them in the Workshop.</p>";
+}
+
+
+function renderHelp() {
+
+    const tabs = getElement("helpTabs");
+    const content = getElement("helpContent");
+
+    if (!tabs || !content) {
+        return;
+    }
+
+    tabs.innerHTML = "";
+
+    HELP_TABS.forEach(function (name) {
+
+        const button = makeElement(
+            "button",
+            "tab" + (name === helpTab ? " active" : ""),
+            name
+        );
+
+        button.addEventListener("click", function () {
+            helpTab = name;
+            renderHelp();
+        });
+
+        tabs.appendChild(button);
+    });
+
+    content.innerHTML = helpHtml(helpTab);
+
+    if (helpTab === "ECHOES") {
+        renderCodex(content);
+    }
+}
+
+
+function renderCodex(content) {
+
+    const filters = makeElement("div", "filters");
+
+    ["ALL", "WORN", "FORGED", "ENGINEERED", "RELIC"].forEach(function (name) {
+
+        const button = makeElement(
+            "button",
+            "tab" + (name === codexFilter ? " active" : ""),
+            name
+        );
+
+        button.addEventListener("click", function () {
+            codexFilter = name;
+            renderHelp();
+        });
+
+        filters.appendChild(button);
+    });
+
+    content.appendChild(filters);
+
+    const grid = makeElement("div", "codex-grid");
+
+    ECHOES.filter(function (echo) {
+        return codexFilter === "ALL" || echo.rarity === codexFilter;
+    }).forEach(function (echo) {
+
+        const item = makeElement(
+            "div",
+            "codex-item rarity-" + echo.rarity.toLowerCase() +
+            (hasEcho(echo.name) ? " equipped" : "")
+        );
+
+        item.innerHTML =
+            "<div class=\"echo-icon\">" + echoIcon(echo.name) + "</div>" +
+            "<div><strong>" + echo.name + "</strong>" +
+            "<small>" + echo.rarity + " - " + getPrice(echo) + " COGS" +
+            (hasEcho(echo.name) ? " - EQUIPPED" : "") + "</small>" +
+            "<p>" + echo.description + "</p></div>";
+
+        grid.appendChild(item);
+    });
+
+    content.appendChild(grid);
+}
+
+
+function openHelp() {
+
+    hideTip();
+
+    getElement("helpModal").classList.remove("hidden");
+
+    renderHelp();
+}
+
+
+function closeHelp(event) {
+
+    if (event && event.target !== event.currentTarget) {
+        return;
+    }
+
+    getElement("helpModal").classList.add("hidden");
+}
+
+
+/* ---------- pause menu + settings ---------- */
+
+const MOTION_KEY = "corvaliMotion";
+const VOLUME_KEY = "corvaliVolume";
+
+let motionReduced = false;
+
+
+function menuIsVisible() {
+
+    return getElement("startOverlay").style.display !== "none";
+}
+
+
+function anyModalOpen() {
+
+    return ["lootModal", "workshopModal", "gameOverModal", "pauseModal", "helpModal"]
+        .some(function (id) {
+            return !getElement(id).classList.contains("hidden");
+        });
+}
+
+
+function openPause() {
+
+    if (menuIsVisible()) {
+        return;
+    }
+
+    hideTip();
+
+    getElement("pauseModal").classList.remove("hidden");
+}
+
+
+function closePause() {
+
+    getElement("pauseModal").classList.add("hidden");
+}
+
+
+function closeAllOverlays() {
+
+    closePause();
+    closeHelp();
+    hideTip();
+}
+
+
+function exitToMenu() {
+
+    returnToMenu();
+}
+
+
+function applyMotion() {
+
+    if (document.body) {
+        document.body.classList.toggle("reduce-motion", motionReduced);
+    }
+
+    const button = getElement("motionButton");
+
+    if (button) {
+
+        button.textContent = motionReduced ? "ON" : "OFF";
+        button.classList.toggle("off", !motionReduced);
+        button.setAttribute("aria-pressed", motionReduced ? "true" : "false");
+    }
+}
+
+
+function toggleMotion() {
+
+    motionReduced = !motionReduced;
+
+    try {
+        localStorage.setItem(MOTION_KEY, motionReduced ? "on" : "off");
+    }
+    catch (error) {
+        /* ignore */
+    }
+
+    applyMotion();
+}
+
+
+function loadSettings() {
+
+    let stored = null;
+
+    try {
+        stored = localStorage.getItem(MOTION_KEY);
+    }
+    catch (error) {
+        stored = null;
+    }
+
+    if (stored === null) {
+
+        motionReduced =
+            typeof window !== "undefined" &&
+            !!window.matchMedia &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    }
+    else {
+        motionReduced = stored === "on";
+    }
+
+    try {
+
+        const volume = parseFloat(localStorage.getItem(VOLUME_KEY));
+
+        if (Number.isFinite(volume)) {
+            musicVolume = Math.max(0, Math.min(1, volume));
+        }
+    }
+    catch (error) {
+        /* ignore */
+    }
+
+    applyMotion();
+
+    const slider = getElement("volumeSlider");
+
+    if (slider) {
+
+        slider.value = Math.round(musicVolume * 100);
+
+        slider.addEventListener("input", function () {
+
+            musicVolume = slider.value / 100;
+
+            try {
+                localStorage.setItem(VOLUME_KEY, String(musicVolume));
+            }
+            catch (error) {
+                /* ignore */
+            }
+
+            if (music) {
+                clearInterval(musicFadeTimer);
+                music.volume = musicVolume;
+            }
+        });
+    }
+}
+
+
+/* ---------- keyboard ---------- */
+
+function initKeyboard() {
+
+    document.addEventListener("keydown", function (event) {
+
+        const tag = event.target && event.target.tagName;
+
+        if (tag === "INPUT" || tag === "TEXTAREA") {
+            return;
+        }
+
+        if (event.ctrlKey || event.metaKey || event.altKey) {
+            return;
+        }
+
+        const key = event.key;
+
+        if (key === "Escape") {
+
+            if (!getElement("helpModal").classList.contains("hidden")) {
+                closeHelp();
+            }
+            else if (!getElement("pauseModal").classList.contains("hidden")) {
+                closePause();
+            }
+            else if (!menuIsVisible() && !anyModalOpen()) {
+                openPause();
+            }
+
+            return;
+        }
+
+        if (key === "?") {
+
+            if (getElement("helpModal").classList.contains("hidden")) {
+                openHelp();
+            }
+            else {
+                closeHelp();
+            }
+
+            return;
+        }
+
+        if (menuIsVisible() || anyModalOpen()) {
+            return;
+        }
+
+        const lower = key.toLowerCase();
+
+        if (lower === "h") { hit(); }
+        else if (lower === "s") { stand(); }
+        else if (lower === "d") { doubleDown(); }
+        else if (lower === "v") { vent(); }
+        else if (lower === "m") { toggleMusic(); }
+    });
+}
+
+
+/* ---------- log toggle ---------- */
+
+function initLogToggle() {
+
+    const toggle = getElement("logToggle");
+    const panel = getElement("logPanel");
+
+    if (!toggle || !panel) {
+        return;
+    }
+
+    function setCollapsed(collapsed) {
+
+        panel.classList.toggle("collapsed", collapsed);
+
+        toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    }
+
+    toggle.addEventListener("click", function () {
+        setCollapsed(!panel.classList.contains("collapsed"));
+    });
+
+    toggle.addEventListener("keydown", function (event) {
+
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setCollapsed(!panel.classList.contains("collapsed"));
+        }
+    });
+
+    if (typeof window !== "undefined" && window.innerWidth <= 700) {
+        setCollapsed(true);
+    }
+}
+
+
+/* ---------- background steam ---------- */
+
+function initSteam() {
+
+    const canvas = getElement("steam");
+
+    if (!canvas || !canvas.getContext || typeof window === "undefined") {
+        return;
+    }
+
+    const context = canvas.getContext("2d");
+
+    let width = 0;
+    let height = 0;
+
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+
+    function puff(initial) {
+
+        return {
+            x: Math.random() * width,
+            y: initial ? Math.random() * height : height + 100,
+            r: 70 + Math.random() * 130,
+            vy: 0.12 + Math.random() * 0.3,
+            vx: (Math.random() - 0.5) * 0.18,
+            a: 0.03 + Math.random() * 0.04
+        };
+    }
+
+    resize();
+
+    window.addEventListener("resize", resize);
+
+    const puffs = [];
+
+    for (let i = 0; i < 20; i++) {
+        puffs.push(puff(true));
+    }
+
+    let last = 0;
+
+    function frame(time) {
+
+        requestAnimationFrame(frame);
+
+        if (document.hidden || time - last < 45) {
+            return;
+        }
+
+        last = time;
+
+        context.clearRect(0, 0, width, height);
+
+        if (motionReduced) {
+            return;
+        }
+
+        puffs.forEach(function (p, index) {
+
+            p.y -= p.vy * 2.2;
+            p.x += p.vx;
+
+            if (p.y < -p.r) {
+                puffs[index] = puff(false);
+                return;
+            }
+
+            const gradient = context.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+
+            gradient.addColorStop(0, "rgba(255,236,200," + p.a + ")");
+            gradient.addColorStop(1, "rgba(255,236,200,0)");
+
+            context.fillStyle = gradient;
+
+            context.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
+        });
+    }
+
+    requestAnimationFrame(frame);
+}
+
+
+function initUI() {
+
+    loadSettings();
+
+    initTooltips();
+    initKeyboard();
+    initLogToggle();
+    initSteam();
+}
+
+
+/* =========================
    INITIALIZATION
    ========================= */
 
@@ -3333,6 +4284,8 @@ document.addEventListener(
 
         loadProfiles();
         renderMenu();
+
+        initUI();
 
         registerServiceWorker();
 

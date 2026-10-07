@@ -6,7 +6,7 @@
 
     <title>CORVALI'S ECHOES</title>
 
-    <meta name="theme-color" content="#b88932">
+    <meta name="theme-color" content="#110b08">
     <meta name="description" content="A steampunk Blackjack roguelike.">
 
     <link rel="manifest" href="./manifest.json">
@@ -18,10 +18,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Corvali">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
+
+<canvas id="steam" aria-hidden="true"></canvas>
 
 <div id="app">
 
@@ -29,25 +32,25 @@
 
     <!-- MENU -->
     <section id="startOverlay" class="screen menu-screen">
+
+        <div class="bg-gear g1"></div>
+        <div class="bg-gear g2"></div>
+
         <div class="menu-frame">
 
-            <img class="menu-logo" src="./icon-192.png" width="120" height="120" alt="">
+            <img class="menu-logo" src="./icon-192.png" width="124" height="124" alt="">
 
             <div class="eyebrow">CORVALI ENGINE // SYSTEM 01</div>
 
             <h1>CORVALI'S<br>ECHOES</h1>
 
-            <p class="subtitle">
-                A STEAMPUNK BLACKJACK ROGUELIKE
-            </p>
+            <p class="subtitle">A STEAMPUNK BLACKJACK ROGUELIKE</p>
 
             <div class="menu-divider"></div>
 
             <div id="menuProfile" class="menu-profile"></div>
 
-            <div class="menu-footer">
-                THE MACHINE REMEMBERS.
-            </div>
+            <div class="menu-footer">THE MACHINE REMEMBERS.</div>
 
         </div>
     </section>
@@ -59,7 +62,7 @@
         <header class="topbar">
 
             <div class="brand">
-                <img class="brand-icon" src="./icon-192.png" width="40" height="40" alt="">
+                <img class="brand-icon" src="./icon-192.png" width="42" height="42" alt="">
                 <div>
                     <div class="game-title">CORVALI'S ECHOES</div>
                     <div class="game-subtitle">ENGINE // ACTIVE</div>
@@ -67,220 +70,242 @@
             </div>
 
             <div class="top-stats">
-                <div>
+
+                <div data-tip="Cycle|Each cycle is one duel against a machine. Every 5th is an Elite, every 10th a Boss.">
                     <span>CYCLE</span>
                     <strong id="cycle">1</strong>
                 </div>
 
-                <div>
+                <div data-tip="Cogs|Currency. Earn it by destroying enemies and spend it on Echoes in the Workshop.">
                     <span>COGS</span>
                     <strong id="cogs">0</strong>
                 </div>
 
-                <button
-                    id="vibrationButton"
-                    class="music-button"
-                    onclick="toggleVibration()"
-                    aria-label="Vibration on/off"
-                    aria-pressed="true">
-                    VIB ON
-                </button>
+                <div class="top-buttons">
+                    <button class="icon-button" onclick="openHelp()" aria-label="How to play" data-tip="How to play|Rules, stats, enemies and the full Echo codex. Shortcut: ?">?</button>
+                    <button class="icon-button" onclick="openPause()" aria-label="Menu" data-tip="Menu|Pause, sound settings and exit. Shortcut: Esc">&#9776;</button>
+                </div>
 
-                <button
-                    id="musicButton"
-                    class="music-button"
-                    onclick="toggleMusic()"
-                    aria-label="Musica on/off"
-                    aria-pressed="true">
-                    ♪ ON
-                </button>
             </div>
 
         </header>
-
 
         <div class="game-layout">
 
         <aside class="sidebar">
 
-        <!-- PLAYER STATUS -->
-        <section id="playerPanel" class="panel player-panel">
+            <!-- PLAYER STATUS -->
+            <section id="playerPanel" class="panel player-panel">
 
-            <div class="panel-title purple">
-                CORVALI
-            </div>
+                <div class="panel-title">CORVALI</div>
 
-            <div class="stats-grid">
+                <div class="stats-grid">
 
-                <div class="stat">
-                    <span>HULL</span>
-                    <small>hull integrity</small>
-                    <strong>
-                        <span id="hull">100</span>/<span id="maxHull">100</span>
-                    </strong>
+                    <div class="stat" data-tip="Hull|Your health. If it reaches 0 the run ends. Destroying enemies repairs some of it, and so do certain Echoes.">
+                        <span>HULL</span>
+                        <small>hull integrity</small>
+                        <strong>
+                            <span id="hull">100</span>/<span id="maxHull">100</span>
+                        </strong>
+                        <div class="bar">
+                            <div id="hullBar" class="bar-fill hull-fill"></div>
+                        </div>
+                    </div>
 
-                    <div class="bar">
-                        <div id="hullBar" class="bar-fill hull-fill"></div>
+                    <div class="stat" data-tip="Pressure|Rises when you HIT or DOUBLE (+5 / +10) and when you bust (+20). Past the limit the engine overheats and damages your hull. VENT lowers it.">
+                        <span>PRESSURE</span>
+                        <small>system pressure</small>
+
+                        <svg id="gauge" class="gauge" viewBox="0 0 120 70" aria-hidden="true">
+                            <path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#0b0705" stroke-width="13"/>
+                            <path d="M10 62 A50 50 0 0 1 75.45 14.45" fill="none" stroke="#6fae5a" stroke-width="8"/>
+                            <path d="M75.45 14.45 A50 50 0 0 1 104.55 39.3" fill="none" stroke="#e0a845" stroke-width="8"/>
+                            <path d="M104.55 39.3 A50 50 0 0 1 110 62" fill="none" stroke="#d2493a" stroke-width="8"/>
+                            <g id="gaugeNeedle" class="gauge-needle">
+                                <line x1="60" y1="62" x2="60" y2="20" stroke="#f1e5c8" stroke-width="3" stroke-linecap="round"/>
+                            </g>
+                            <circle cx="60" cy="62" r="6" fill="#c9973f" stroke="#3d2a10" stroke-width="2"/>
+                        </svg>
+
+                        <strong>
+                            <span id="pressure">0</span>/<span id="maxPressure">100</span>
+                        </strong>
+
+                        <div class="bar">
+                            <div id="pressureBar" class="bar-fill pressure-fill"></div>
+                        </div>
+                    </div>
+
+                    <div class="stat" data-tip="Base Torque|Equals your hand value plus Echo bonuses. It is the base of the damage you deal when you win a round.">
+                        <span>BASE TORQUE</span>
+                        <small>mechanical power</small>
+                        <strong id="baseTorque">0</strong>
+                    </div>
+
+                    <div class="stat" data-tip="Clock Power|A damage multiplier. Damage = Torque x (1 + Clock Power / 10) minus enemy Armor. Hands of 18+ grant bonus Clock Power.">
+                        <span>CLOCK POWER</span>
+                        <small>time power</small>
+                        <strong id="clockPower">0</strong>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- EQUIPPED ECHOES -->
+            <section class="panel echoes-panel">
+
+                <div class="section-heading">
+                    <div>
+                        <div class="panel-title purple">EQUIPPED ECHOES</div>
+                        <div class="section-description">
+                            MAXIMUM 3 - HOVER OR TAP FOR DETAILS
+                        </div>
+                    </div>
+
+                    <div class="echo-counter">
+                        <span id="echoCount">0</span>/3
                     </div>
                 </div>
 
-                <div class="stat">
-                    <span>PRESSURE</span>
-                    <small>system pressure</small>
-                    <strong>
-                        <span id="pressure">0</span>/<span id="maxPressure">100</span>
-                    </strong>
+                <div id="equippedEchoes" class="echo-slots"></div>
 
-                    <div class="bar">
-                        <div id="pressureBar" class="bar-fill pressure-fill"></div>
-                    </div>
-                </div>
-
-                <div class="stat">
-                    <span>BASE TORQUE</span>
-                    <small>mechanical power</small>
-                    <strong id="baseTorque">0</strong>
-                </div>
-
-                <div class="stat">
-                    <span>CLOCK POWER</span>
-                    <small>time power</small>
-                    <strong id="clockPower">0</strong>
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- EQUIPPED ECHOES -->
-        <section class="panel echoes-panel">
-
-            <div class="section-heading">
-                <div>
-                    <div class="panel-title purple">EQUIPPED ECHOES</div>
-                    <div class="section-description">
-                        MAXIMUM 3 — REPLACEABLE
-                    </div>
-                </div>
-
-                <div class="echo-counter">
-                    <span id="echoCount">0</span>/3
-                </div>
-            </div>
-
-            <div id="equippedEchoes" class="echo-slots"></div>
-
-        </section>
-
+            </section>
 
         </aside>
 
+
         <div class="main-col">
 
-        <!-- ENEMY -->
-        <section id="enemyPanel" class="panel enemy-panel">
+            <!-- ENEMY -->
+            <section id="enemyPanel" class="panel enemy-panel">
 
-            <div class="enemy-header">
+                <div class="enemy-top">
 
-                <div>
-                    <div id="enemyTier" class="enemy-tier">TIER I</div>
-                    <h2 id="enemyName">BRASS SENTINEL</h2>
+                    <div id="enemyPortrait" class="enemy-portrait"></div>
+
+                    <div class="enemy-info">
+
+                        <div class="enemy-header">
+
+                            <div>
+                                <div id="enemyTier" class="enemy-tier">TIER I</div>
+                                <h2 id="enemyName">BRASS SENTINEL</h2>
+                            </div>
+
+                            <div class="enemy-hull-value">
+                                <span id="enemyHull">50</span> /
+                                <span id="enemyMaxHull">50</span>
+                            </div>
+
+                        </div>
+
+                        <div class="bar enemy-bar">
+                            <div id="enemyHullBar" class="bar-fill enemy-fill"></div>
+                        </div>
+
+                        <div class="enemy-stats">
+
+                            <div data-tip="Attack|The damage you take when you lose a round or bust.">
+                                <span>ATTACK</span>
+                                <strong id="enemyAttack">9</strong>
+                            </div>
+
+                            <div data-tip="Armor|Subtracted from every hit you deal (minimum 1 damage).">
+                                <span>ARMOR</span>
+                                <strong id="enemyArmor">0</strong>
+                            </div>
+
+                            <div id="enemyAbilityBox" data-tip="Ability|Special behaviour of this machine.">
+                                <span>ABILITY</span>
+                                <strong id="enemyAbility">NONE</strong>
+                            </div>
+
+                        </div>
+
+                    </div>
+
                 </div>
 
-                <div class="enemy-hull-value">
-                    <span id="enemyHull">50</span> /
-                    <span id="enemyMaxHull">50</span>
+                <div class="enemy-hand">
+
+                    <div class="enemy-hand-heading">
+                        <span>ENEMY HAND</span>
+                        <strong id="enemyHandValue">0</strong>
+                    </div>
+
+                    <div id="enemyCards" class="cards enemy-cards"></div>
+
                 </div>
 
-            </div>
+            </section>
 
-            <div class="bar enemy-bar">
-                <div id="enemyHullBar" class="bar-fill enemy-fill"></div>
-            </div>
 
-            <div class="enemy-stats">
+            <!-- HAND -->
+            <section class="panel hand-panel">
 
-                <div>
-                    <span>ATTACK</span>
-                    <strong id="enemyAttack">10</strong>
+                <div class="hand-heading">
+                    <div class="panel-title">YOUR HAND</div>
+
+                    <div class="hand-value" data-tip="Hand value|Get as close to 21 as you can without going over. Aces count as 11 or 1. The enemy draws until it reaches 17.">
+                        <span>VALUE</span>
+                        <strong id="handValue">0</strong>
+                    </div>
                 </div>
 
-                <div>
-                    <span>ARMOR</span>
-                    <strong id="enemyArmor">4</strong>
+                <div class="preview">
+                    <span id="previewWin" class="pv-win" data-tip="If you win|Damage you would deal right now, after the enemy's armor."></span>
+                    <span id="previewLose" class="pv-lose" data-tip="If you lose|Damage you would take if the enemy beats you or you bust."></span>
                 </div>
 
-                <div>
-                    <span>ABILITY</span>
-                    <strong id="enemyAbility">ARMOR</strong>
+                <div id="roundResult" class="round-result"></div>
+
+                <div id="cards" class="cards"></div>
+
+            </section>
+
+
+            <!-- MESSAGE LOG -->
+            <section id="logPanel" class="panel log-panel">
+
+                <div id="logToggle" class="panel-title log-title" role="button" tabindex="0" aria-expanded="true">
+                    ENGINE LOG <span class="chev">&#9662;</span>
                 </div>
 
-            </div>
+                <div id="log" class="log"></div>
 
-            <div class="enemy-hand">
-
-                <div class="enemy-hand-heading">
-                    <span>ENEMY HAND</span>
-                    <strong id="enemyHandValue">0</strong>
-                </div>
-
-                <div id="enemyCards" class="cards enemy-cards"></div>
-
-            </div>
-
-        </section>
+            </section>
 
 
-        <!-- HAND -->
-        <section class="panel hand-panel">
+            <!-- ACTIONS -->
+            <section class="actions">
 
-            <div class="hand-heading">
-                <div class="panel-title">YOUR HAND</div>
+                <button id="hitButton" class="btn-hit" onclick="hit()" data-tip="Hit|Draw one card (+5 Pressure). Go over 21 and you bust. Shortcut: H">
+                    HIT
+                    <small>DRAW A CARD</small>
+                    <kbd>H</kbd>
+                </button>
 
-                <div class="hand-value">
-                    <span>VALUE</span>
-                    <strong id="handValue">0</strong>
-                </div>
-            </div>
+                <button id="standButton" class="btn-stand" onclick="stand()" data-tip="Stand|Keep your hand. The enemy reveals its card and draws to 17, then the hands are compared. Shortcut: S">
+                    STAND
+                    <small>KEEP YOUR HAND</small>
+                    <kbd>S</kbd>
+                </button>
 
-            <div id="roundResult" class="round-result"></div>
+                <button id="doubleButton" class="btn-double" onclick="doubleDown()" data-tip="Double|Only on your first two cards. Draw exactly one card and stand. Damage you deal AND take is doubled (+10 Pressure). Shortcut: D">
+                    DOUBLE
+                    <small>x2 RISK, x2 REWARD</small>
+                    <kbd>D</kbd>
+                </button>
 
-            <div id="cards" class="cards"></div>
+                <button id="ventButton" class="btn-vent" onclick="vent()" data-tip="Vent|Release 30 Pressure. Free and instant, but only before you commit to a round. Shortcut: V">
+                    VENT
+                    <small>RELEASE PRESSURE</small>
+                    <kbd>V</kbd>
+                </button>
 
-        </section>
-
-
-        <!-- MESSAGE LOG -->
-        <section class="panel log-panel">
-
-            <div class="panel-title">ENGINE LOG</div>
-
-            <div id="log" class="log"></div>
-
-        </section>
-
-
-        <!-- ACTIONS -->
-        <section class="actions">
-
-            <button id="hitButton" onclick="hit()">
-                HIT
-            </button>
-
-            <button id="standButton" onclick="stand()">
-                STAND
-            </button>
-
-            <button id="doubleButton" onclick="doubleDown()">
-                DOUBLE
-            </button>
-
-            <button id="ventButton" onclick="vent()">
-                VENT
-            </button>
-
-        </section>
+            </section>
 
         </div>
 
@@ -294,15 +319,11 @@
 
         <div class="modal-card loot-card">
 
-            <div class="modal-eyebrow">
-                ENCOUNTER RESOLVED
-            </div>
+            <div class="modal-eyebrow">ENCOUNTER RESOLVED</div>
 
-            <div class="loot-icon">✦</div>
+            <div class="loot-icon">&#10022;</div>
 
-            <h2 id="lootEnemyName">
-                ENEMY DESTROYED
-            </h2>
+            <h2 id="lootEnemyName">ENEMY DESTROYED</h2>
 
             <p id="lootMessage" class="loot-message">
                 THE MACHINE HAS BEEN SILENCED.
@@ -327,11 +348,11 @@
 
         <div class="modal-card workshop-card">
 
-            <div class="modal-eyebrow">
-                CORVALI WORKSHOP
-            </div>
+            <div class="modal-eyebrow">CORVALI WORKSHOP</div>
 
             <h2>SELECT AN ECHO</h2>
+
+            <div class="workshop-cogs">COGS <strong id="workshopCogs">0</strong></div>
 
             <p class="workshop-description">
                 CHOOSE AN ECHO TO MODIFY THE ENGINE.
@@ -342,15 +363,11 @@
 
             <div id="replacementPanel" class="replacement-panel hidden">
 
-                <div class="replacement-title">
-                    REPLACE AN EQUIPPED ECHO
-                </div>
+                <div class="replacement-title">REPLACE AN EQUIPPED ECHO</div>
 
                 <div id="replacementSlots" class="replacement-slots"></div>
 
-                <button
-                    class="secondary-button"
-                    onclick="cancelReplacement()">
+                <button class="secondary-button" onclick="cancelReplacement()">
                     CANCEL
                 </button>
 
@@ -373,9 +390,7 @@
 
         <div class="modal-card gameover-card">
 
-            <div class="modal-eyebrow">
-                SYSTEM FAILURE
-            </div>
+            <div class="modal-eyebrow">SYSTEM FAILURE</div>
 
             <h2>ENGINE SILENCED</h2>
 
@@ -409,8 +424,72 @@
     </div>
 
 
+    <!-- PAUSE MENU -->
+    <div id="pauseModal" class="modal hidden">
+
+        <div class="modal-card pause-card">
+
+            <div class="modal-eyebrow">ENGINE PAUSED</div>
+
+            <h2>MENU</h2>
+
+            <div class="menu-list">
+
+                <button class="main-button" onclick="closePause()">RESUME</button>
+
+                <button class="secondary-button" onclick="openHelp()">HOW TO PLAY</button>
+
+                <div class="setting-row">
+                    <span>MUSIC</span>
+                    <button id="musicButton" class="toggle-button" onclick="toggleMusic()" aria-pressed="true">&#9834; ON</button>
+                </div>
+
+                <div class="setting-row">
+                    <span>VOLUME</span>
+                    <input id="volumeSlider" type="range" min="0" max="100" value="35" aria-label="Music volume">
+                </div>
+
+                <div class="setting-row">
+                    <span>VIBRATION</span>
+                    <button id="vibrationButton" class="toggle-button" onclick="toggleVibration()" aria-pressed="true">VIB ON</button>
+                </div>
+
+                <div class="setting-row">
+                    <span>REDUCE MOTION</span>
+                    <button id="motionButton" class="toggle-button off" onclick="toggleMotion()" aria-pressed="false">OFF</button>
+                </div>
+
+                <button class="secondary-button" onclick="exitToMenu()">EXIT TO MAIN MENU</button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- HELP / CODEX -->
+    <div id="helpModal" class="modal hidden" onclick="closeHelp(event)">
+
+        <div class="modal-card help-card">
+
+            <div class="modal-eyebrow">FIELD MANUAL</div>
+
+            <h2>HOW TO PLAY</h2>
+
+            <div id="helpTabs" class="tabs"></div>
+
+            <div id="helpContent" class="help-content"></div>
+
+            <button class="main-button" onclick="closeHelp()">CLOSE</button>
+
+        </div>
+
+    </div>
+
 </div>
 
+<div id="tooltip" class="tooltip" role="tooltip"></div>
 
 <script src="./game.js"></script>
 
