@@ -535,7 +535,7 @@ function startNewRun() {
         return;
     }
 
-    if (profile.run && !confirm("Abandon your saved run and start a new one?")) {
+    if (profile.run && !confirm(trString("Abandon your saved run and start a new one?"))) {
         return;
     }
 
@@ -2913,7 +2913,7 @@ function deleteProfile(name) {
         return;
     }
 
-    if (!confirm("Delete profile " + name + " and all its progress?")) {
+    if (!confirm(trString("Delete profile " + name + " and all its progress?"))) {
         return;
     }
 
@@ -3267,7 +3267,7 @@ function renderProfilePicker(root) {
             deleteProfile(name);
         });
 
-        remove.setAttribute("aria-label", "Delete profile " + name);
+        remove.setAttribute("aria-label", trString("Delete profile " + name));
 
         row.appendChild(pick);
         row.appendChild(remove);
@@ -3282,7 +3282,7 @@ function renderProfilePicker(root) {
     input.id = "profileName";
     input.type = "text";
     input.maxLength = MAX_PROFILE_NAME;
-    input.placeholder = "ENGINEER NAME";
+    input.placeholder = trString("ENGINEER NAME");
     input.setAttribute("autocomplete", "off");
 
     input.addEventListener("keydown", function (event) {
@@ -3569,7 +3569,7 @@ function renderExtras() {
         }
         else if (bust) {
 
-            win.textContent = "BUST";
+            win.textContent = "YOU BUST";
             lose.textContent = "YOU TAKE " + calcEnemyDamage();
         }
         else {
@@ -3768,6 +3768,10 @@ let codexFilter = "ALL";
 
 
 function helpHtml(tab) {
+
+    if (uiLang === "it") {
+        return helpHtmlIt(tab);
+    }
 
     if (tab === "BASICS") {
 
@@ -4257,6 +4261,20 @@ function initSteam() {
 }
 
 
+function refreshAfterLanguage() {
+
+    hideTip();
+
+    renderMenu();
+
+    render();
+
+    if (!getElement("helpModal").classList.contains("hidden")) {
+        renderHelp();
+    }
+}
+
+
 function initUI() {
 
     loadSettings();
@@ -4265,6 +4283,8 @@ function initUI() {
     initKeyboard();
     initLogToggle();
     initSteam();
+
+    initI18n();
 }
 
 

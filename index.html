@@ -38,6 +38,11 @@
 
         <div class="menu-frame">
 
+            <div class="lang-switch" role="group" aria-label="Language">
+                <button data-lang="en" onclick="setLanguage('en')">EN</button>
+                <button data-lang="it" onclick="setLanguage('it')">IT</button>
+            </div>
+
             <img class="menu-logo" src="./icon-192.png" width="124" height="124" alt="">
 
             <div class="eyebrow">CORVALI ENGINE // SYSTEM 01</div>
@@ -440,6 +445,14 @@
                 <button class="secondary-button" onclick="openHelp()">HOW TO PLAY</button>
 
                 <div class="setting-row">
+                    <span>LANGUAGE</span>
+                    <div class="lang-switch" role="group" aria-label="Language">
+                        <button data-lang="en" onclick="setLanguage('en')">EN</button>
+                        <button data-lang="it" onclick="setLanguage('it')">IT</button>
+                    </div>
+                </div>
+
+                <div class="setting-row">
                     <span>MUSIC</span>
                     <button id="musicButton" class="toggle-button" onclick="toggleMusic()" aria-pressed="true">&#9834; ON</button>
                 </div>
@@ -491,6 +504,7 @@
 
 <div id="tooltip" class="tooltip" role="tooltip"></div>
 
+<script src="./i18n.js"></script>
 <script src="./game.js"></script>
 
 </body>

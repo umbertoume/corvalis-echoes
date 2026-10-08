@@ -1910,8 +1910,8 @@ body.reduce-motion *::after {
 
     .actions button {
         padding: 14px 2px 12px;
-        font-size: 12px;
-        letter-spacing: 1px;
+        font-size: 11px;
+        letter-spacing: .5px;
     }
 
     .actions button small,
@@ -1958,4 +1958,43 @@ body.reduce-motion *::after {
     .codex-grid { grid-template-columns: 1fr; }
     .modal-card { padding: 20px; }
     .final-stats strong { font-size: 22px; }
+}
+
+
+
+/* =====================================================
+   LANGUAGE SWITCH
+   ===================================================== */
+
+.lang-switch {
+    display: inline-flex;
+    overflow: hidden;
+    border: 1px solid var(--brass-dark);
+    border-radius: 3px;
+}
+
+.lang-switch button {
+    padding: 7px 12px;
+    border: 0;
+    background: rgba(0,0,0,.35);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    cursor: pointer;
+}
+
+.lang-switch button + button {
+    border-left: 1px solid var(--brass-dark);
+}
+
+.lang-switch button.active {
+    background: linear-gradient(180deg, #f3d58f, #c9973f);
+    color: #1a1008;
+}
+
+.menu-frame > .lang-switch {
+    position: absolute;
+    top: 14px;
+    right: 14px;
 }
